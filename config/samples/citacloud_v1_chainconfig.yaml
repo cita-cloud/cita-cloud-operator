@@ -1,0 +1,7 @@
+apiVersion: citacloud.rivtower.com/v1
+kind: ChainConfig
+metadata:
+  name: chainconfig-sample
+spec:
+  imageInfo:
+    networkImage: citacloud/network_direct:v6.0.1

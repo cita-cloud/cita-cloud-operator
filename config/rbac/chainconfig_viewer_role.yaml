@@ -1,0 +1,20 @@
+# permissions for end users to view chainconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chainconfig-viewer-role
+rules:
+- apiGroups:
+  - citacloud.rivtower.com
+  resources:
+  - chainconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - citacloud.rivtower.com
+  resources:
+  - chainconfigs/status
+  verbs:
+  - get

@@ -1,0 +1,24 @@
+# permissions for end users to edit chainconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chainconfig-editor-role
+rules:
+- apiGroups:
+  - citacloud.rivtower.com
+  resources:
+  - chainconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - citacloud.rivtower.com
+  resources:
+  - chainconfigs/status
+  verbs:
+  - get

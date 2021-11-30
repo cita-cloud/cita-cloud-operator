@@ -1,0 +1,6 @@
+apiVersion: citacloud.rivtower.com/v1
+kind: ChainNode
+metadata:
+  name: chainnode-sample
+spec:
+  # TODO(user): Add fields here

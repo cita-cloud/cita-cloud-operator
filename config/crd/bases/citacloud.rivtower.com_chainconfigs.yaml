@@ -1,0 +1,146 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
+  name: chainconfigs.citacloud.rivtower.com
+spec:
+  group: citacloud.rivtower.com
+  names:
+    kind: ChainConfig
+    listKind: ChainConfigList
+    plural: chainconfigs
+    singular: chainconfig
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: ChainConfig is the Schema for the chainconfigs API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ChainConfigSpec defines the desired state of ChainConfig
+            properties:
+              blockInterval:
+                description: 出块间隔
+                type: string
+              blockLimit:
+                description: 块大小限制
+                type: string
+              enableTls:
+                description: 开启tls认证
+                type: boolean
+              id:
+                description: chain id
+                type: string
+              imageInfo:
+                description: ImageInfo
+                properties:
+                  consensusImage:
+                    description: consensus微服务镜像
+                    type: string
+                  controllerImage:
+                    description: controller微服务镜像
+                    type: string
+                  executorImage:
+                    description: executor微服务镜像
+                    type: string
+                  kmsImage:
+                    description: kms微服务镜像
+                    type: string
+                  networkImage:
+                    description: network微服务镜像
+                    type: string
+                  storageImage:
+                    description: storage微服务镜像
+                    type: string
+                type: object
+              kmsPassword:
+                description: admin用户的kms password
+                type: string
+              prevhash:
+                description: 创世块的prevhash
+                type: string
+              timestamp:
+                description: 创世块的时间戳
+                type: string
+              validators:
+                description: 共识节点的地址列表
+                items:
+                  type: string
+                type: array
+            required:
+            - id
+            type: object
+          status:
+            description: ChainConfigStatus defines the observed state of ChainConfig
+            properties:
+              adminAddress:
+                description: admin账户的地址
+                type: string
+              caCert:
+                description: ca证书
+                type: string
+              caKey:
+                description: ca key
+                type: string
+              message:
+                description: 详情
+                type: string
+              nodeInfos:
+                description: 链下节点信息
+                items:
+                  properties:
+                    address:
+                      description: 节点地址
+                      type: string
+                    cluster:
+                      description: 所属的k8s集群
+                      type: string
+                    domain:
+                      description: Domain
+                      type: string
+                    externalIp:
+                      description: 节点对外public ip
+                      type: string
+                    internalIp:
+                      description: 节点集群内部ip
+                      type: string
+                    name:
+                      description: 对应节点名称
+                      type: string
+                    port:
+                      description: 节点暴露的端口号
+                      type: string
+                  type: object
+                type: array
+              status:
+                description: 状态
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

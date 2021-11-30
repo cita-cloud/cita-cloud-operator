@@ -1,0 +1,24 @@
+# permissions for end users to edit chainnodes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chainnode-editor-role
+rules:
+- apiGroups:
+  - citacloud.rivtower.com
+  resources:
+  - chainnodes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - citacloud.rivtower.com
+  resources:
+  - chainnodes/status
+  verbs:
+  - get
