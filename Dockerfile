@@ -13,24 +13,33 @@ RUN go mod download
 COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
+COPY pkg/ pkg/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o cita-cloud-operator main.go
 
 FROM debian:buster-slim
+ARG version
+ENV GIT_COMMIT=$version
+LABEL maintainers="rivtower.com"
+LABEL description="cita-cloud-operator"
+
+MAINTAINER https://github.com/acechef
+
 WORKDIR /
 COPY --from=zhuzhuqiang/cloud-config:refactor /usr/bin/cloud-config /usr/bin/
 RUN /bin/sh -c set -eux;\
     apt-get update;\
     apt-get install -y --no-install-recommends libsqlite3-0;\
     rm -rf /var/lib/apt/lists/*;
-COPY --from=builder /workspace/manager .
-ENTRYPOINT ["/manager"]
+COPY --from=builder /workspace/cita-cloud-operator .
+USER 65532:65532
+ENTRYPOINT ["/cita-cloud-operator"]
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 #FROM gcr.io/distroless/static:nonroot
 #WORKDIR /
 #COPY --from=builder /workspace/manager .
-#USER 65532:65532
+
 #
 #ENTRYPOINT ["/manager"]
