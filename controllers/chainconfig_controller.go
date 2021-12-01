@@ -56,7 +56,7 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	// init chain and init chain config
-	cc := cmd.NewCloudConfig(chainConfig.Name, "./")
+	cc := cmd.NewCloudConfig(chainConfig.Name, ".")
 	if !cc.Exist() {
 		err := cc.Init(chainConfig.Spec.Id)
 		if err != nil {
@@ -87,7 +87,9 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		adminConfigMap.BinaryData["kms.db"] = kmsDb
+		adminConfigMap.BinaryData = map[string][]byte{
+			"kms.db": kmsDb,
+		}
 
 		// set ownerReference
 		_ = ctrl.SetControllerReference(chainConfig, adminConfigMap, r.Scheme)
@@ -105,51 +107,53 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		adminAddress = adminConfigMap.Data["address"]
 	}
 
-	chainSecret := &corev1.Secret{}
-	err = r.Get(ctx, types.NamespacedName{Name: chainConfig.Name, Namespace: chainConfig.Namespace}, chainSecret)
-	if err != nil && errors.IsNotFound(err) {
-		// not found
-		// 1.1 ca secret not exist
-		var cert, key []byte
-		if !cc.Exist() {
-			// 1.1.1 dir not exist, we will create dir and create ca secret
-			err = cc.Init(chainConfig.Spec.Id)
+	if chainConfig.Spec.EnableTLS {
+		chainSecret := &corev1.Secret{}
+		err = r.Get(ctx, types.NamespacedName{Name: chainConfig.Name, Namespace: chainConfig.Namespace}, chainSecret)
+		if err != nil && errors.IsNotFound(err) {
+			// not found
+			// 1.1 ca secret not exist
+			var cert, key []byte
+			if !cc.Exist() {
+				// 1.1.1 dir not exist, we will create dir and create ca secret
+				err = cc.Init(chainConfig.Spec.Id)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+				cert, key, err = cc.CreateCaAndRead()
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+			} else {
+				// 1.1.2 dir exist, we will create ca secret
+				// if any file not exist, will return error
+				cert, key, err = cc.ReadCa()
+			}
 			if err != nil {
 				return ctrl.Result{}, err
 			}
-			cert, key, err = cc.CreateCaAndRead()
+			chainSecret.ObjectMeta = metav1.ObjectMeta{
+				Name:      chainConfig.Name,
+				Namespace: chainConfig.Namespace,
+				Labels:    labelsForChain(chainConfig.Name),
+			}
+			chainSecret.Data = map[string][]byte{
+				"cert": cert,
+				"key":  key,
+			}
+			// set ownerReference
+			_ = ctrl.SetControllerReference(chainConfig, chainSecret, r.Scheme)
+			// create chain secret
+			err = r.Create(ctx, chainSecret)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
-		} else {
-			// 1.1.2 dir exist, we will create ca secret
-			// if any file not exist, will return error
-			cert, key, err = cc.ReadCa()
-		}
-		if err != nil {
+			// requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			logger.Error(err, "failed to get chain secret")
 			return ctrl.Result{}, err
 		}
-		chainSecret.ObjectMeta = metav1.ObjectMeta{
-			Name:      chainConfig.Name,
-			Namespace: chainConfig.Namespace,
-			Labels:    labelsForChain(chainConfig.Name),
-		}
-		chainSecret.Data = map[string][]byte{
-			"cert": cert,
-			"key":  key,
-		}
-		// set ownerReference
-		_ = ctrl.SetControllerReference(chainConfig, chainSecret, r.Scheme)
-		// create chain secret
-		err = r.Create(ctx, chainSecret)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		// requeue
-		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
-		logger.Error(err, "failed to get chain secret")
-		return ctrl.Result{}, err
 	}
 
 	// update status
@@ -159,7 +163,7 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		chainConfig.Status.AdminAddress = adminAddress
 		err := r.Status().Update(ctx, chainConfig)
 		if err != nil {
-			logger.Error(err, "Failed to update Memcached status")
+			logger.Error(err, "Failed to update chain config status")
 			return ctrl.Result{}, err
 		}
 	}

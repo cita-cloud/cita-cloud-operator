@@ -33,7 +33,7 @@ type CloudConfigCmd struct {
 }
 
 func (c CloudConfigCmd) Exist() bool {
-	_, err := os.Stat(c.configDir + c.chainName)
+	_, err := os.Stat(fmt.Sprintf("%s/%s", c.configDir, c.chainName))
 	if err == nil {
 		return true
 	}
@@ -61,7 +61,7 @@ func (c CloudConfigCmd) CreateAccount(kmsPassword string) (keyId, address string
 		return "", "", err
 	}
 	l := strings.Split(string(out), ",")
-	return strings.Split(l[0], ":")[1], strings.Split(l[1], ":")[1], nil
+	return strings.Split(l[0], ":")[1], strings.Replace(strings.Split(l[1], ":")[1], "\n", "", -1), nil
 }
 
 func (c CloudConfigCmd) ReadKmsDb(address string) ([]byte, error) {

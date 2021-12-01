@@ -60,92 +60,154 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	nodeSecret := &corev1.Secret{}
-	err := r.Get(ctx, types.NamespacedName{Name: chainNode.Name, Namespace: chainNode.Namespace}, nodeSecret)
-	if err != nil && errors.IsNotFound(err) {
-		// not found
-		cc := cmd.NewCloudConfig(chainConfig.Name, "./")
-		// 1. check ca secret
-		chainSecret := &corev1.Secret{}
-		err = r.Get(ctx, types.NamespacedName{Name: chainNode.Spec.ChainName, Namespace: chainNode.Namespace}, chainSecret)
-		if err != nil && errors.IsNotFound(err) {
-			// 1.1 ca secret not exist
-			var cert, key []byte
-			if !cc.Exist() {
-				// 1.1.1 dir not exist, we will create dir and create ca secret
-				err = cc.Init(chainConfig.Spec.Id)
-				if err != nil {
-					return ctrl.Result{}, err
-				}
-				cert, key, err = cc.CreateCaAndRead()
-				if err != nil {
-					return ctrl.Result{}, err
-				}
-			} else {
-				// 1.1.2 dir exist, we will create ca secret
-				// if any file not exist, will return error
-				cert, key, err = cc.ReadCa()
-			}
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			chainSecret.ObjectMeta = metav1.ObjectMeta{
-				Name:      chainNode.Spec.ChainName,
-				Namespace: chainNode.Namespace,
-			}
-			chainSecret.Data = map[string][]byte{
-				"cert": cert,
-				"key":  key,
-			}
-			// set ownerReference
-			_ = ctrl.SetControllerReference(chainConfig, chainSecret, r.Scheme)
-			// create chain secret
-			err = r.Create(ctx, chainSecret)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			// requeue
-			return ctrl.Result{Requeue: true}, nil
-		} else if err != nil {
-			// 1.2 get ca secret error
-			return ctrl.Result{}, err
-		} else {
-			// 1.3 ca secret exist
-			// 1.3.1 dir not exist, we will recover
-			if !cc.Exist() {
-				err = cc.WriteCaCert(chainSecret.Data["cert"])
-				if err != nil {
-					return ctrl.Result{}, err
-				}
-				err = cc.WriteCaKey(chainSecret.Data["key"])
-				if err != nil {
-					return ctrl.Result{}, err
-				}
-			}
-		}
-		// this situation gen csr directly
-		csr, key, cert, err := cc.CreateSignCsrAndRead(chainNode.Spec.Domain)
+	// init chain and init chain config
+	cc := cmd.NewCloudConfig(chainConfig.Name, ".")
+	if !cc.Exist() {
+		err := cc.Init(chainConfig.Spec.Id)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		nodeSecret.ObjectMeta = metav1.ObjectMeta{
-			Name:      chainNode.Name,
+	}
+
+	// check admin account
+	var nodeAddress string
+	accountConfigMap := &corev1.ConfigMap{}
+	err := r.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-%s-admin", chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, accountConfigMap)
+	if err != nil && errors.IsNotFound(err) {
+		keyId, nodeAddress, err := cc.CreateAccount(chainNode.Spec.KmsPassword)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		accountConfigMap.ObjectMeta = metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-%s-admin", chainConfig.Name, chainNode.Name),
 			Namespace: chainNode.Namespace,
+			Labels:    labelsForChain(chainNode.Name),
 		}
-		nodeSecret.Data = map[string][]byte{
-			"csr":  csr,
-			"key":  key,
-			"cert": cert,
+		accountConfigMap.Data = map[string]string{
+			"keyId":   keyId,
+			"address": nodeAddress,
 		}
+		kmsDb, err := cc.ReadKmsDb(nodeAddress)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		accountConfigMap.BinaryData = map[string][]byte{
+			"kms.db": kmsDb,
+		}
+
 		// set ownerReference
-		_ = ctrl.SetControllerReference(chainNode, nodeSecret, r.Scheme)
-		// create node secret
-		err = r.Create(ctx, nodeSecret)
+		_ = ctrl.SetControllerReference(chainNode, accountConfigMap, r.Scheme)
+		// create chain secret
+		err = r.Create(ctx, accountConfigMap)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 		// requeue
 		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		logger.Error(err, "failed to get node address configmap")
+		return ctrl.Result{}, err
+	} else {
+		nodeAddress = accountConfigMap.Data["address"]
+	}
+
+	if chainConfig.Spec.EnableTLS {
+		nodeSecret := &corev1.Secret{}
+		err := r.Get(ctx, types.NamespacedName{Name: chainNode.Name, Namespace: chainNode.Namespace}, nodeSecret)
+		if err != nil && errors.IsNotFound(err) {
+			// not found
+			// 1. check ca secret
+			chainSecret := &corev1.Secret{}
+			err = r.Get(ctx, types.NamespacedName{Name: chainNode.Spec.ChainName, Namespace: chainNode.Namespace}, chainSecret)
+			if err != nil && errors.IsNotFound(err) {
+				// 1.1 ca secret not exist
+				var cert, key []byte
+				if !cc.Exist() {
+					// 1.1.1 dir not exist, we will create dir and create ca secret
+					err = cc.Init(chainConfig.Spec.Id)
+					if err != nil {
+						return ctrl.Result{}, err
+					}
+					cert, key, err = cc.CreateCaAndRead()
+					if err != nil {
+						return ctrl.Result{}, err
+					}
+				} else {
+					// 1.1.2 dir exist, we will create ca secret
+					// if any file not exist, will return error
+					cert, key, err = cc.ReadCa()
+				}
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+				chainSecret.ObjectMeta = metav1.ObjectMeta{
+					Name:      chainNode.Spec.ChainName,
+					Namespace: chainNode.Namespace,
+				}
+				chainSecret.Data = map[string][]byte{
+					"cert": cert,
+					"key":  key,
+				}
+				// set ownerReference
+				_ = ctrl.SetControllerReference(chainConfig, chainSecret, r.Scheme)
+				// create chain secret
+				err = r.Create(ctx, chainSecret)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+				// requeue
+				return ctrl.Result{Requeue: true}, nil
+			} else if err != nil {
+				// 1.2 get ca secret error
+				return ctrl.Result{}, err
+			} else {
+				// 1.3 ca secret exist
+				// 1.3.1 dir not exist, we will recover
+				if !cc.Exist() {
+					err = cc.WriteCaCert(chainSecret.Data["cert"])
+					if err != nil {
+						return ctrl.Result{}, err
+					}
+					err = cc.WriteCaKey(chainSecret.Data["key"])
+					if err != nil {
+						return ctrl.Result{}, err
+					}
+				}
+			}
+			// this situation gen csr directly
+			csr, key, cert, err := cc.CreateSignCsrAndRead(chainNode.Spec.Domain)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			nodeSecret.ObjectMeta = metav1.ObjectMeta{
+				Name:      chainNode.Name,
+				Namespace: chainNode.Namespace,
+			}
+			nodeSecret.Data = map[string][]byte{
+				"csr":  csr,
+				"key":  key,
+				"cert": cert,
+			}
+			// set ownerReference
+			_ = ctrl.SetControllerReference(chainNode, nodeSecret, r.Scheme)
+			// create node secret
+			err = r.Create(ctx, nodeSecret)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			// requeue
+			return ctrl.Result{Requeue: true}, nil
+		}
+	}
+
+	// update status
+	if chainNode.Status.Address != nodeAddress {
+		chainNode.Status.Address = nodeAddress
+		err := r.Status().Update(ctx, chainNode)
+		if err != nil {
+			logger.Error(err, "Failed to update chain node status")
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil

@@ -2,6 +2,10 @@ apiVersion: citacloud.rivtower.com/v1
 kind: ChainConfig
 metadata:
   name: chainconfig-sample
+  namespace: cita
 spec:
+  id: asda212312edeewed
+  enableTls: false
+  kmsPassword: "123456"
   imageInfo:
-    networkImage: citacloud/network_direct:v6.0.1
+    networkImage: citacloud/network_direct:v6.3.0
