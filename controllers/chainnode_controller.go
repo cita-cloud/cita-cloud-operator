@@ -72,14 +72,14 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// check admin account
 	var nodeAddress string
 	accountConfigMap := &corev1.ConfigMap{}
-	err := r.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-%s-admin", chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, accountConfigMap)
+	err := r.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-%s", chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, accountConfigMap)
 	if err != nil && errors.IsNotFound(err) {
 		keyId, nodeAddress, err := cc.CreateAccount(chainNode.Spec.KmsPassword)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 		accountConfigMap.ObjectMeta = metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s-admin", chainConfig.Name, chainNode.Name),
+			Name:      fmt.Sprintf("%s-%s", chainConfig.Name, chainNode.Name),
 			Namespace: chainNode.Namespace,
 			Labels:    labelsForChain(chainNode.Name),
 		}
@@ -109,6 +109,30 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	} else {
 		nodeAddress = accountConfigMap.Data["address"]
+	}
+
+	if chainNode.Spec.Address == "" {
+		chainNode.Spec.Address = nodeAddress
+		if err := r.Update(ctx, chainNode); err != nil {
+			logger.Error(err, "update chain node address error")
+			return ctrl.Result{}, err
+		}
+		logger.Info("set chain node address success")
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// set ownerReference
+	if len(chainNode.OwnerReferences) == 0 {
+		if err := ctrl.SetControllerReference(chainConfig, chainNode, r.Scheme); err != nil {
+			logger.Error(err, "set chain node controller reference failed")
+			return ctrl.Result{}, err
+		}
+		if err := r.Update(ctx, chainNode); err != nil {
+			logger.Error(err, "update chain node controller reference failed")
+			return ctrl.Result{}, err
+		}
+		logger.Info("set chain node controller reference success")
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	if chainConfig.Spec.EnableTLS {
@@ -197,16 +221,6 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 			// requeue
 			return ctrl.Result{Requeue: true}, nil
-		}
-	}
-
-	// update status
-	if chainNode.Status.Address != nodeAddress {
-		chainNode.Status.Address = nodeAddress
-		err := r.Status().Update(ctx, chainNode)
-		if err != nil {
-			logger.Error(err, "Failed to update chain node status")
-			return ctrl.Result{}, err
 		}
 	}
 

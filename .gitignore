@@ -23,3 +23,6 @@ testbin/*
 *.swp
 *.swo
 *~
+
+# generate chain dir
+my-chainconfig

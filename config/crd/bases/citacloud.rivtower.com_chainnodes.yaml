@@ -39,6 +39,9 @@ spec:
               chainName:
                 description: 对应的链级配置名称
                 type: string
+              kmsPassword:
+                description: 节点用户的kms password
+                type: string
               logLevel:
                 description: 日志等级
                 type: string
@@ -81,6 +84,9 @@ spec:
           status:
             description: ChainNodeStatus defines the observed state of ChainNode
             properties:
+              address:
+                description: node address
+                type: string
               status:
                 type: string
             type: object

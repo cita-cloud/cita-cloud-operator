@@ -28,6 +28,9 @@ type ChainConfigSpec struct {
 	// chain id
 	Id string `json:"id"`
 
+	// admin账户的地址
+	AdminAddress string `json:"adminAddress,omitempty"`
+
 	// 共识节点的地址列表
 	Validators []string `json:"validators,omitempty"`
 
@@ -71,7 +74,7 @@ type ChainConfigStatus struct {
 	// ca key
 	CaKey string `json:"caKey,omitempty"`
 	// admin账户的地址
-	AdminAddress string `json:"adminAddress,omitempty"`
+	//AdminAddress string `json:"adminAddress,omitempty"`
 	// 状态
 	Status ChainStatus `json:"status,omitempty"`
 	// 详情

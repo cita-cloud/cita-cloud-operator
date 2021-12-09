@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -98,6 +99,7 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
+		logger.Info(fmt.Sprintf("chain config configmap %s/%s created", chainConfig.Namespace, chainConfig.Name))
 		// requeue
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
@@ -105,6 +107,16 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	} else {
 		adminAddress = adminConfigMap.Data["address"]
+	}
+
+	if chainConfig.Spec.AdminAddress == "" {
+		chainConfig.Spec.AdminAddress = adminAddress
+		if err := r.Update(ctx, chainConfig); err != nil {
+			logger.Error(err, "update chain config admin address error")
+			return ctrl.Result{}, err
+		}
+		logger.Info("set chain config admin address success")
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	if chainConfig.Spec.EnableTLS {
@@ -148,6 +160,7 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
+			logger.Info(fmt.Sprintf("chain config secret %s/%s created", chainConfig.Namespace, chainConfig.Name))
 			// requeue
 			return ctrl.Result{Requeue: true}, nil
 		} else if err != nil {
@@ -156,16 +169,32 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
-	// update status
-	if chainConfig.Status.AdminAddress != adminAddress && chainConfig.Status.Status == "" && len(chainConfig.Spec.Validators) == 0 {
-		chainConfig.Status.Status = citacloudv1.Initialization
-
-		chainConfig.Status.AdminAddress = adminAddress
+	var updateStatusFlag bool
+	// list all chain's node
+	chainNodeList := &citacloudv1.ChainNodeList{}
+	opts := []client.ListOption{
+		client.InNamespace(chainConfig.Namespace),
+		//client.MatchingLabels{"spec.chainName": chainConfig.Name},
+		client.MatchingFields{"spec.chainName": chainConfig.Name},
+	}
+	if err := r.List(ctx, chainNodeList, opts...); err != nil {
+		return ctrl.Result{}, err
+	}
+	nodeInfos := make([]citacloudv1.NodeInfo, 0)
+	for _, nl := range chainNodeList.Items {
+		nodeInfos = append(nodeInfos, nl.Spec.NodeInfo)
+	}
+	if !reflect.DeepEqual(chainConfig.Status.NodeInfos, nodeInfos) {
+		chainConfig.Status.NodeInfos = nodeInfos
+		updateStatusFlag = true
+	}
+	if updateStatusFlag {
 		err := r.Status().Update(ctx, chainConfig)
 		if err != nil {
 			logger.Error(err, "Failed to update chain config status")
 			return ctrl.Result{}, err
 		}
+		logger.Info("update status successful")
 	}
 
 	return ctrl.Result{}, nil
@@ -177,5 +206,6 @@ func (r *ChainConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&citacloudv1.ChainConfig{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
+		Owns(&citacloudv1.ChainNode{}).
 		Complete(r)
 }
