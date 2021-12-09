@@ -36,6 +36,9 @@ spec:
           spec:
             description: ChainConfigSpec defines the desired state of ChainConfig
             properties:
+              adminAddress:
+                description: admin账户的地址
+                type: string
               blockInterval:
                 description: 出块间隔
                 type: string
@@ -90,9 +93,6 @@ spec:
           status:
             description: ChainConfigStatus defines the observed state of ChainConfig
             properties:
-              adminAddress:
-                description: admin账户的地址
-                type: string
               caCert:
                 description: ca证书
                 type: string
@@ -130,7 +130,8 @@ spec:
                   type: object
                 type: array
               status:
-                description: 状态
+                description: admin账户的地址 AdminAddress string `json:"adminAddress,omitempty"`
+                  状态
                 type: string
             type: object
         type: object

@@ -32,6 +32,9 @@ type ChainNodeSpec struct {
 	// 对应的链级配置名称
 	ChainName string `json:"chainName,omitempty"`
 
+	// 节点用户的kms password
+	KmsPassword string `json:"kmsPassword,omitempty"`
+
 	// 日志等级
 	LogLevel string `json:"logLevel,omitempty"`
 
@@ -54,6 +57,8 @@ const (
 // ChainNodeStatus defines the observed state of ChainNode
 type ChainNodeStatus struct {
 	Status NodeStatus `json:"status,omitempty"`
+	// node address
+	Address string `json:"address,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -1,6 +1,13 @@
 apiVersion: citacloud.rivtower.com/v1
 kind: ChainNode
 metadata:
-  name: chainnode-sample
+  name: my-chainnode-1
+  namespace: cita
 spec:
-  # TODO(user): Add fields here
+  nodeInfo:
+    cluster: k8s-1
+    name: my-chainnode-1
+    domain: www.hello.com
+  chainName: my-chainconfig
+  kmsPassword: "123456"
+  storageSize: 21474836480

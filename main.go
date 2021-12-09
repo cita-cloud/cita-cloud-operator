@@ -95,7 +95,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 设置chainConfig索引
+	// 设置chainNode索引
 	err = mgr.GetCache().IndexField(context.Background(), &citacloudv1.ChainNode{}, "spec.chainName", func(o client.Object) []string {
 		var res []string
 		res = append(res, o.(*citacloudv1.ChainNode).Spec.ChainName)

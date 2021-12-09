@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -56,7 +57,7 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	// init chain and init chain config
-	cc := cmd.NewCloudConfig(chainConfig.Name, "./")
+	cc := cmd.NewCloudConfig(chainConfig.Name, ".")
 	if !cc.Exist() {
 		err := cc.Init(chainConfig.Spec.Id)
 		if err != nil {
@@ -87,7 +88,9 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		adminConfigMap.BinaryData["kms.db"] = kmsDb
+		adminConfigMap.BinaryData = map[string][]byte{
+			"kms.db": kmsDb,
+		}
 
 		// set ownerReference
 		_ = ctrl.SetControllerReference(chainConfig, adminConfigMap, r.Scheme)
@@ -96,6 +99,7 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
+		logger.Info(fmt.Sprintf("chain config configmap %s/%s created", chainConfig.Namespace, chainConfig.Name))
 		// requeue
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
@@ -105,63 +109,92 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		adminAddress = adminConfigMap.Data["address"]
 	}
 
-	chainSecret := &corev1.Secret{}
-	err = r.Get(ctx, types.NamespacedName{Name: chainConfig.Name, Namespace: chainConfig.Namespace}, chainSecret)
-	if err != nil && errors.IsNotFound(err) {
-		// not found
-		// 1.1 ca secret not exist
-		var cert, key []byte
-		if !cc.Exist() {
-			// 1.1.1 dir not exist, we will create dir and create ca secret
-			err = cc.Init(chainConfig.Spec.Id)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-			cert, key, err = cc.CreateCaAndRead()
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-		} else {
-			// 1.1.2 dir exist, we will create ca secret
-			// if any file not exist, will return error
-			cert, key, err = cc.ReadCa()
-		}
-		if err != nil {
+	if chainConfig.Spec.AdminAddress == "" {
+		chainConfig.Spec.AdminAddress = adminAddress
+		if err := r.Update(ctx, chainConfig); err != nil {
+			logger.Error(err, "update chain config admin address error")
 			return ctrl.Result{}, err
 		}
-		chainSecret.ObjectMeta = metav1.ObjectMeta{
-			Name:      chainConfig.Name,
-			Namespace: chainConfig.Namespace,
-			Labels:    labelsForChain(chainConfig.Name),
-		}
-		chainSecret.Data = map[string][]byte{
-			"cert": cert,
-			"key":  key,
-		}
-		// set ownerReference
-		_ = ctrl.SetControllerReference(chainConfig, chainSecret, r.Scheme)
-		// create chain secret
-		err = r.Create(ctx, chainSecret)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		// requeue
+		logger.Info("set chain config admin address success")
 		return ctrl.Result{Requeue: true}, nil
-	} else if err != nil {
-		logger.Error(err, "failed to get chain secret")
-		return ctrl.Result{}, err
 	}
 
-	// update status
-	if chainConfig.Status.AdminAddress != adminAddress && chainConfig.Status.Status == "" && len(chainConfig.Spec.Validators) == 0 {
-		chainConfig.Status.Status = citacloudv1.Initialization
-
-		chainConfig.Status.AdminAddress = adminAddress
-		err := r.Status().Update(ctx, chainConfig)
-		if err != nil {
-			logger.Error(err, "Failed to update Memcached status")
+	if chainConfig.Spec.EnableTLS {
+		chainSecret := &corev1.Secret{}
+		err = r.Get(ctx, types.NamespacedName{Name: chainConfig.Name, Namespace: chainConfig.Namespace}, chainSecret)
+		if err != nil && errors.IsNotFound(err) {
+			// not found
+			// 1.1 ca secret not exist
+			var cert, key []byte
+			if !cc.Exist() {
+				// 1.1.1 dir not exist, we will create dir and create ca secret
+				err = cc.Init(chainConfig.Spec.Id)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+				cert, key, err = cc.CreateCaAndRead()
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+			} else {
+				// 1.1.2 dir exist, we will create ca secret
+				// if any file not exist, will return error
+				cert, key, err = cc.ReadCa()
+			}
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			chainSecret.ObjectMeta = metav1.ObjectMeta{
+				Name:      chainConfig.Name,
+				Namespace: chainConfig.Namespace,
+				Labels:    labelsForChain(chainConfig.Name),
+			}
+			chainSecret.Data = map[string][]byte{
+				"cert": cert,
+				"key":  key,
+			}
+			// set ownerReference
+			_ = ctrl.SetControllerReference(chainConfig, chainSecret, r.Scheme)
+			// create chain secret
+			err = r.Create(ctx, chainSecret)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			logger.Info(fmt.Sprintf("chain config secret %s/%s created", chainConfig.Namespace, chainConfig.Name))
+			// requeue
+			return ctrl.Result{Requeue: true}, nil
+		} else if err != nil {
+			logger.Error(err, "failed to get chain secret")
 			return ctrl.Result{}, err
 		}
+	}
+
+	var updateStatusFlag bool
+	// list all chain's node
+	chainNodeList := &citacloudv1.ChainNodeList{}
+	opts := []client.ListOption{
+		client.InNamespace(chainConfig.Namespace),
+		//client.MatchingLabels{"spec.chainName": chainConfig.Name},
+		client.MatchingFields{"spec.chainName": chainConfig.Name},
+	}
+	if err := r.List(ctx, chainNodeList, opts...); err != nil {
+		return ctrl.Result{}, err
+	}
+	nodeInfos := make([]citacloudv1.NodeInfo, 0)
+	for _, nl := range chainNodeList.Items {
+		nodeInfos = append(nodeInfos, nl.Spec.NodeInfo)
+	}
+	if !reflect.DeepEqual(chainConfig.Status.NodeInfos, nodeInfos) {
+		chainConfig.Status.NodeInfos = nodeInfos
+		updateStatusFlag = true
+	}
+	if updateStatusFlag {
+		err := r.Status().Update(ctx, chainConfig)
+		if err != nil {
+			logger.Error(err, "Failed to update chain config status")
+			return ctrl.Result{}, err
+		}
+		logger.Info("update status successful")
 	}
 
 	return ctrl.Result{}, nil
@@ -173,5 +206,6 @@ func (r *ChainConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&citacloudv1.ChainConfig{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Secret{}).
+		Owns(&citacloudv1.ChainNode{}).
 		Complete(r)
 }
