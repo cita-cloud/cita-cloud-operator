@@ -566,6 +566,10 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 		}
 		// set ownerReference
 		_ = ctrl.SetControllerReference(chainNode, sts, r.Scheme)
+		//  set pvc reference to crd
+		for i := range sts.Spec.VolumeClaimTemplates {
+			_ = ctrl.SetControllerReference(chainNode, &sts.Spec.VolumeClaimTemplates[i], r.Scheme)
+		}
 		// create chain secret
 		err = r.Create(ctx, sts)
 		if err != nil {
