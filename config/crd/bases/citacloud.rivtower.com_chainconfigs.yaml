@@ -41,10 +41,12 @@ spec:
                 type: string
               blockInterval:
                 description: 出块间隔
-                type: string
+                format: int32
+                type: integer
               blockLimit:
                 description: 块大小限制
-                type: string
+                format: int32
+                type: integer
               enableTls:
                 description: 开启tls认证
                 type: boolean
@@ -81,14 +83,19 @@ spec:
                 type: string
               timestamp:
                 description: 创世块的时间戳
-                type: string
+                format: int64
+                type: integer
               validators:
                 description: 共识节点的地址列表
                 items:
                   type: string
                 type: array
             required:
+            - blockInterval
+            - blockLimit
             - id
+            - prevhash
+            - timestamp
             type: object
           status:
             description: ChainConfigStatus defines the observed state of ChainConfig
@@ -102,9 +109,8 @@ spec:
               message:
                 description: 详情
                 type: string
-              nodeInfos:
-                description: 链下节点信息
-                items:
+              nodeInfoMap:
+                additionalProperties:
                   properties:
                     address:
                       description: 节点地址
@@ -121,14 +127,13 @@ spec:
                     internalIp:
                       description: 节点集群内部ip
                       type: string
-                    name:
-                      description: 对应节点名称
-                      type: string
                     port:
                       description: 节点暴露的端口号
-                      type: string
+                      format: int32
+                      type: integer
                   type: object
-                type: array
+                description: 链下节点信息
+                type: object
               status:
                 description: admin账户的地址 AdminAddress string `json:"adminAddress,omitempty"`
                   状态

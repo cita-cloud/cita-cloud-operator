@@ -174,30 +174,55 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	chainNodeList := &citacloudv1.ChainNodeList{}
 	opts := []client.ListOption{
 		client.InNamespace(chainConfig.Namespace),
-		//client.MatchingLabels{"spec.chainName": chainConfig.Name},
 		client.MatchingFields{"spec.chainName": chainConfig.Name},
 	}
 	if err := r.List(ctx, chainNodeList, opts...); err != nil {
 		return ctrl.Result{}, err
 	}
-	nodeInfos := make([]citacloudv1.NodeInfo, 0)
-	for _, nl := range chainNodeList.Items {
-		nodeInfos = append(nodeInfos, nl.Spec.NodeInfo)
+
+	// set validators
+	if updateValidators(chainConfig, chainNodeList.Items) {
+		if err := r.Update(ctx, chainConfig); err != nil {
+			logger.Error(err, "update chain config validator error")
+			return ctrl.Result{}, err
+		}
+		logger.Info("set chain config validator success")
+		return ctrl.Result{Requeue: true}, nil
 	}
-	if !reflect.DeepEqual(chainConfig.Status.NodeInfos, nodeInfos) {
-		chainConfig.Status.NodeInfos = nodeInfos
+
+	nodeInfoMap := make(map[string]citacloudv1.NodeInfo, 0)
+	for _, nl := range chainNodeList.Items {
+		nodeInfoMap[nl.Name] = nl.Spec.NodeInfo
+	}
+	if !reflect.DeepEqual(chainConfig.Status.NodeInfoMap, nodeInfoMap) {
+		chainConfig.Status.NodeInfoMap = nodeInfoMap
 		updateStatusFlag = true
 	}
 	if updateStatusFlag {
 		err := r.Status().Update(ctx, chainConfig)
 		if err != nil {
-			logger.Error(err, "Failed to update chain config status")
+			logger.Error(err, "failed to update chain config status")
 			return ctrl.Result{}, err
 		}
-		logger.Info("update status successful")
+		logger.Info("update chain config status successful")
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func updateValidators(config *citacloudv1.ChainConfig, chainNodes []citacloudv1.ChainNode) bool {
+	var updateFlag bool
+	if len(config.Spec.Validators) != len(chainNodes) {
+		tmp := make([]string, 0)
+		for _, node := range chainNodes {
+			if node.Spec.Type == citacloudv1.Consensus {
+				tmp = append(tmp, node.Spec.Address)
+			}
+		}
+		config.Spec.Validators = tmp
+		updateFlag = true
+	}
+	return updateFlag
 }
 
 // SetupWithManager sets up the controller with the Manager.

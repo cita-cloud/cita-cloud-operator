@@ -36,22 +36,48 @@ type ChainNodeSpec struct {
 	KmsPassword string `json:"kmsPassword,omitempty"`
 
 	// 日志等级
-	LogLevel string `json:"logLevel,omitempty"`
+	LogLevel LogLevel `json:"logLevel,omitempty"`
 
 	// pvc对应的storage class, 集群中必须存在的storage class
 	StorageClassName *string `json:"storageClassName,omitempty"`
 
 	// 申请的pvc大小
 	StorageSize *int64 `json:"storageSize"`
+
+	// 期望的状态
+	Action NodeAction `json:"action"`
+
+	// 节点类型
+	Type NodeType `json:"type"`
 }
+
+type LogLevel string
+
+const (
+	Info LogLevel = "info"
+)
+
+type NodeType string
+
+const (
+	Consensus NodeType = "Consensus"
+	Ordinary  NodeType = "Ordinary"
+)
+
+type NodeAction string
+
+const (
+	NodeInitialize NodeAction = "Initialize"
+	NodeCreate     NodeAction = "Create"
+)
 
 type NodeStatus string
 
 const (
-	Creating NodeStatus = "Creating"
-	//Running  NodeStatus = "Running"
-	Warning NodeStatus = "Warning"
-	Error   NodeStatus = "Error"
+	NodeInitialized NodeStatus = "Initialized"
+	NodeRunning     NodeStatus = "Running"
+	NodeWarning     NodeStatus = "Warning"
+	NodeError       NodeStatus = "Error"
 )
 
 // ChainNodeStatus defines the observed state of ChainNode

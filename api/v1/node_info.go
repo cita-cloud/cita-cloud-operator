@@ -5,9 +5,6 @@ type NodeInfo struct {
 	// 所属的k8s集群
 	Cluster string `json:"cluster,omitempty"`
 
-	// 对应节点名称
-	Name string `json:"name,omitempty"`
-
 	// Domain
 	Domain string `json:"domain,omitempty"`
 
@@ -21,5 +18,5 @@ type NodeInfo struct {
 	ExternalIp string `json:"externalIp,omitempty"`
 
 	// 节点暴露的端口号
-	Port string `json:"port,omitempty"`
+	Port int32 `json:"port,omitempty"`
 }
