@@ -1,7 +1,7 @@
 apiVersion: citacloud.rivtower.com/v1
 kind: ChainNode
 metadata:
-  name: my-node-2
+  name: my-node-1
   namespace: cita
 spec:
   nodeInfo:

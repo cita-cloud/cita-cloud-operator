@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -252,9 +253,46 @@ func (r *ChainNodeReconciler) EnsureInit(ctx context.Context, logger logr.Logger
 
 func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logger,
 	chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (ctrl.Result, error) {
+	// create clusterIP Service
+	// check: apt-get update && apt-get install dnsutils && nslookup my-chainconfig-my-node-1-cluster-ip
+	clusterIPService := &corev1.Service{}
+	err := r.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-%s-cluster-ip", chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, clusterIPService)
+	if err != nil && errors.IsNotFound(err) {
+		clusterIPService.ObjectMeta = metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-%s-cluster-ip", chainConfig.Name, chainNode.Name),
+			Namespace: chainNode.Namespace,
+			Labels:    labelsForChain(chainNode.Name),
+		}
+		TargetPort := intstr.FromInt(NetworkPort)
+		clusterIPService.Spec = corev1.ServiceSpec{
+			Selector: labelsForChain(chainNode.Name),
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "network",
+					Port:       40000,
+					TargetPort: TargetPort,
+				},
+			},
+			Type: corev1.ServiceTypeClusterIP,
+		}
+		// set ownerReference
+		_ = ctrl.SetControllerReference(chainNode, clusterIPService, r.Scheme)
+		// create chain secret
+		err = r.Create(ctx, clusterIPService)
+		if err != nil {
+			logger.Error(err, "failed to create chain node clusterIP service")
+			return ctrl.Result{}, err
+		}
+		// requeue
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		logger.Error(err, "failed to get chain node clusterIP service")
+		return ctrl.Result{}, err
+	}
+
 	// create ChainNode's ConfigMap
 	nodeConfigMap := &corev1.ConfigMap{}
-	err := r.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-%s-config", chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, nodeConfigMap)
+	err = r.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-%s-config", chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, nodeConfigMap)
 	if err != nil && errors.IsNotFound(err) {
 		nodeConfigMap.ObjectMeta = metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s-config", chainConfig.Name, chainNode.Name),
@@ -343,7 +381,7 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 								ImagePullPolicy: "Always",
 								Ports: []corev1.ContainerPort{
 									{
-										ContainerPort: 40000,
+										ContainerPort: NetworkPort,
 										Protocol:      "TCP",
 										Name:          "network",
 									},

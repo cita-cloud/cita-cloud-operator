@@ -14,4 +14,8 @@ const (
 	KmsLogConfigFile        = "kms-log4rs.yaml"
 	NetworkLogConfigFile    = "network-log4rs.yaml"
 	StorageLogConfigFile    = "storage-log4rs.yaml"
+
+	NetworkPort = 40000
 )
+
+//var NetworkPort int32

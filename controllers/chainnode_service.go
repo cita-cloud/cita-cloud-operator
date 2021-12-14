@@ -207,14 +207,20 @@ port = 40000
 `
 
 	nodeList := cns.ChainConfig.Status.NodeInfoMap
-	for _, node := range nodeList {
+	for key, node := range nodeList {
 		if node.Address == cns.ChainNode.Spec.Address {
+			// ignore own
 			continue
 		}
-		networkStr = networkStr + fmt.Sprintf(`[[network_p2p.peers]]
+		if node.Cluster == cns.ChainNode.Spec.Cluster {
+			// in the same k8s cluster
+			networkStr = networkStr + fmt.Sprintf(`[[network_p2p.peers]]
 address = '/dns4/%s/tcp/%d'
 
-`, cns.ChainNode.Spec.InternalIp, cns.ChainNode.Spec.Port)
+`, fmt.Sprintf("%s-%s-cluster-ip", cns.ChainConfig.Name, key), 40000)
+		} else {
+			// todo: in different k8s cluster
+		}
 	}
 	return networkStr
 }
