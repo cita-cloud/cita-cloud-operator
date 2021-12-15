@@ -303,12 +303,7 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 		cnService := NewChainNodeService(chainConfig, chainNode)
 
 		nodeConfigMap.Data = map[string]string{
-			NodeConfigFile:          cnService.GenerateNodeConfig(),
-			ControllerLogConfigFile: cnService.GenerateControllerLogConfig(),
-			ExecutorLogConfigFile:   cnService.GenerateExecutorLogConfig(),
-			KmsLogConfigFile:        cnService.GenerateKmsLogConfig(),
-			NetworkLogConfigFile:    cnService.GenerateNetworkLogConfig(),
-			StorageLogConfigFile:    cnService.GenerateStorageLogConfig(),
+			NodeConfigFile: cnService.GenerateNodeConfig(),
 		}
 		// set ownerReference
 		_ = ctrl.SetControllerReference(chainNode, nodeConfigMap, r.Scheme)
@@ -322,6 +317,38 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
 		logger.Error(err, "failed to get chain node configmap")
+		return ctrl.Result{}, err
+	}
+
+	logConfigMap := &corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-%s-log-config", chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, logConfigMap)
+	if err != nil && errors.IsNotFound(err) {
+		logConfigMap.ObjectMeta = metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-%s-log-config", chainConfig.Name, chainNode.Name),
+			Namespace: chainNode.Namespace,
+			Labels:    labelsForChain(chainNode.Name),
+		}
+
+		cnService := NewChainNodeService(chainConfig, chainNode)
+		logConfigMap.Data = map[string]string{
+			ControllerLogConfigFile: cnService.GenerateControllerLogConfig(),
+			ExecutorLogConfigFile:   cnService.GenerateExecutorLogConfig(),
+			KmsLogConfigFile:        cnService.GenerateKmsLogConfig(),
+			NetworkLogConfigFile:    cnService.GenerateNetworkLogConfig(),
+			StorageLogConfigFile:    cnService.GenerateStorageLogConfig(),
+		}
+		// set ownerReference
+		_ = ctrl.SetControllerReference(chainNode, logConfigMap, r.Scheme)
+		// create chain secret
+		err = r.Create(ctx, logConfigMap)
+		if err != nil {
+			logger.Error(err, "failed to create chain node log configmap")
+			return ctrl.Result{}, err
+		}
+		// requeue
+		return ctrl.Result{Requeue: true}, nil
+	} else if err != nil {
+		logger.Error(err, "failed to get chain node log configmap")
 		return ctrl.Result{}, err
 	}
 
@@ -376,7 +403,7 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 						},
 						Containers: []corev1.Container{
 							{
-								Name:            "network",
+								Name:            NetworkContainer,
 								Image:           "citacloud/network_p2p:v6.3.0",
 								ImagePullPolicy: "Always",
 								Ports: []corev1.ContainerPort{
@@ -411,14 +438,14 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 									},
 									// log config
 									{
-										Name:      NodeConfigVolumeName,
+										Name:      LogConfigVolumeName,
 										SubPath:   NetworkLogConfigFile,
 										MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NetworkLogConfigFile),
 									},
 								},
 							},
 							{
-								Name:            "consensus",
+								Name:            ConsensusContainer,
 								Image:           "citacloud/consensus_raft:v6.3.0",
 								ImagePullPolicy: "Always",
 								Ports: []corev1.ContainerPort{
@@ -449,7 +476,7 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 								},
 							},
 							{
-								Name:            "executor",
+								Name:            ExecutorContainer,
 								Image:           "citacloud/executor_evm:v6.3.0",
 								ImagePullPolicy: "Always",
 								Ports: []corev1.ContainerPort{
@@ -479,14 +506,14 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 									},
 									// log config
 									{
-										Name:      NodeConfigVolumeName,
+										Name:      LogConfigVolumeName,
 										SubPath:   ExecutorLogConfigFile,
 										MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, ExecutorLogConfigFile),
 									},
 								},
 							},
 							{
-								Name:            "storage",
+								Name:            StorageContainer,
 								Image:           "citacloud/storage_rocksdb:v6.3.0",
 								ImagePullPolicy: "Always",
 								Ports: []corev1.ContainerPort{
@@ -516,14 +543,14 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 									},
 									// log config
 									{
-										Name:      NodeConfigVolumeName,
+										Name:      LogConfigVolumeName,
 										SubPath:   StorageLogConfigFile,
 										MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, StorageLogConfigFile),
 									},
 								},
 							},
 							{
-								Name:            "controller",
+								Name:            ControllerContainer,
 								Image:           "citacloud/controller:v6.3.0",
 								ImagePullPolicy: "Always",
 								Ports: []corev1.ContainerPort{
@@ -553,14 +580,14 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 									},
 									// log config
 									{
-										Name:      NodeConfigVolumeName,
+										Name:      LogConfigVolumeName,
 										SubPath:   ControllerLogConfigFile,
 										MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, ControllerLogConfigFile),
 									},
 								},
 							},
 							{
-								Name:            "kms",
+								Name:            KmsContainer,
 								Image:           "citacloud/kms_sm:v6.3.0",
 								ImagePullPolicy: "Always",
 								Ports: []corev1.ContainerPort{
@@ -590,7 +617,7 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 									},
 									// log config
 									{
-										Name:      NodeConfigVolumeName,
+										Name:      LogConfigVolumeName,
 										SubPath:   KmsLogConfigFile,
 										MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, KmsLogConfigFile),
 									},
@@ -667,13 +694,24 @@ func getVolumes(chainNode *citacloudv1.ChainNode) []corev1.Volume {
 				},
 			},
 		},
-		// node configmap as a volume
+		// node config configmap as a volume
 		{
 			Name: NodeConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: fmt.Sprintf("%s-%s-config", chainNode.Spec.ChainName, chainNode.Name),
+					},
+				},
+			},
+		},
+		// log config configmap as a volume
+		{
+			Name: LogConfigVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: fmt.Sprintf("%s-%s-log-config", chainNode.Spec.ChainName, chainNode.Name),
 					},
 				},
 			},

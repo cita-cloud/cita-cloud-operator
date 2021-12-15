@@ -1,8 +1,16 @@
 package controllers
 
 const (
+	NetworkContainer    = "network"
+	ConsensusContainer  = "consensus"
+	ExecutorContainer   = "executor"
+	StorageContainer    = "storage"
+	ControllerContainer = "controller"
+	KmsContainer        = "kms"
+
 	AccountVolumeName         = "account"
 	AccountVolumeMountPath    = "/mnt"
+	LogConfigVolumeName       = "log-config"
 	NodeConfigVolumeName      = "node-config"
 	NodeConfigVolumeMountPath = "/data"
 	DataVolumeName            = "datadir"

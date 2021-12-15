@@ -55,7 +55,7 @@ appenders:
 root:
   level: %s
   appenders:
-    - journey-service`, string(cns.ChainNode.Spec.LogLevel))
+    - stdout`, string(cns.ChainNode.Spec.LogLevel))
 }
 
 func (cns *ChainNodeService) GenerateExecutorLogConfig() string {
@@ -89,7 +89,7 @@ appenders:
 root:
   level: %s
   appenders:
-    - journey-service`, string(cns.ChainNode.Spec.LogLevel))
+    - stdout`, string(cns.ChainNode.Spec.LogLevel))
 }
 
 func (cns *ChainNodeService) GenerateKmsLogConfig() string {
@@ -123,7 +123,7 @@ appenders:
 root:
   level: %s
   appenders:
-    - journey-service`, string(cns.ChainNode.Spec.LogLevel))
+    - stdout`, string(cns.ChainNode.Spec.LogLevel))
 }
 
 func (cns *ChainNodeService) GenerateNetworkLogConfig() string {
@@ -157,7 +157,7 @@ appenders:
 root:
   level: %s
   appenders:
-    - journey-service`, string(cns.ChainNode.Spec.LogLevel))
+    - stdout`, string(cns.ChainNode.Spec.LogLevel))
 }
 
 func (cns *ChainNodeService) GenerateStorageLogConfig() string {
@@ -191,7 +191,7 @@ appenders:
 root:
   level: %s
   appenders:
-    - journey-service`, string(cns.ChainNode.Spec.LogLevel))
+    - stdout`, string(cns.ChainNode.Spec.LogLevel))
 }
 
 func (cns *ChainNodeService) GenerateNodeConfig() string {
