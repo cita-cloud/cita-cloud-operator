@@ -53,28 +53,6 @@ spec:
               id:
                 description: chain id
                 type: string
-              imageInfo:
-                description: ImageInfo
-                properties:
-                  consensusImage:
-                    description: consensus微服务镜像
-                    type: string
-                  controllerImage:
-                    description: controller微服务镜像
-                    type: string
-                  executorImage:
-                    description: executor微服务镜像
-                    type: string
-                  kmsImage:
-                    description: kms微服务镜像
-                    type: string
-                  networkImage:
-                    description: network微服务镜像
-                    type: string
-                  storageImage:
-                    description: storage微服务镜像
-                    type: string
-                type: object
               kmsPassword:
                 description: admin用户的kms password
                 type: string

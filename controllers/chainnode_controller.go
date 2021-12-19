@@ -59,6 +59,171 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	chainConfig := &citacloudv1.ChainConfig{}
+	if err := r.Get(ctx, types.NamespacedName{Name: chainNode.Spec.ChainName, Namespace: chainNode.Namespace}, chainConfig); err != nil {
+		logger.Info(fmt.Sprintf("the chainconfig %s/%s has been deleted", req.Namespace, chainNode.Spec.ChainName))
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	if chainNode.Spec.Action == citacloudv1.NodeInitialize {
+		oldChainNode := chainNode.DeepCopy()
+		if err := r.SetDefaultSpec(ctx, chainConfig, chainNode); err != nil {
+			return ctrl.Result{}, err
+		}
+		if !IsEqual(oldChainNode.Spec, chainNode.Spec) {
+			diff, _ := DiffObject(oldChainNode, chainNode)
+			logger.Info("SetDefault: " + string(diff))
+			return ctrl.Result{}, r.Update(ctx, chainNode)
+		}
+
+		updated, err := r.SetDefaultStatus(ctx, chainNode)
+		if updated || err != nil {
+			return ctrl.Result{}, err
+		}
+	} else if chainNode.Spec.Action == citacloudv1.NodeCreate {
+		// create all resource
+		if err := r.ReconcileAll(ctx, chainConfig, chainNode); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *ChainNodeReconciler) SetDefaultSpec(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
+	logger := log.FromContext(ctx)
+
+	// set default images
+	if chainNode.Spec.NetworkImage == "" {
+		chainNode.Spec.NetworkImage = "citacloud/network_p2p:v6.3.0"
+	}
+	if chainNode.Spec.ConsensusImage == "" {
+		chainNode.Spec.ConsensusImage = "citacloud/consensus_raft:v6.3.0"
+	}
+	if chainNode.Spec.ExecutorImage == "" {
+		chainNode.Spec.ExecutorImage = "citacloud/executor_evm:v6.3.0"
+	}
+	if chainNode.Spec.StorageImage == "" {
+		chainNode.Spec.StorageImage = "citacloud/storage_rocksdb:v6.3.0"
+	}
+	if chainNode.Spec.ControllerImage == "" {
+		chainNode.Spec.ControllerImage = "citacloud/controller:v6.3.0"
+	}
+	if chainNode.Spec.KmsImage == "" {
+		chainNode.Spec.KmsImage = "citacloud/kms_sm:v6.3.0"
+	}
+
+	if chainNode.Spec.Address == "" {
+		// init chain and init chain config
+		cc := cmd.NewCloudConfig(chainConfig.Name, ".")
+		if !cc.Exist() {
+			err := cc.Init(chainConfig.Spec.Id)
+			if err != nil {
+				return err
+			}
+		}
+
+		// check node account
+		accountConfigMap := &corev1.ConfigMap{}
+		err := r.Get(ctx, types.NamespacedName{Name: GetNodeAccountName(chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, accountConfigMap)
+		if err != nil && errors.IsNotFound(err) {
+
+			keyId, nodeAddress, err := cc.CreateAccount(chainNode.Spec.KmsPassword)
+			if err != nil {
+				return err
+			}
+			accountConfigMap.ObjectMeta = metav1.ObjectMeta{
+				Name:      GetNodeAccountName(chainConfig.Name, chainNode.Name),
+				Namespace: chainNode.Namespace,
+				Labels:    LabelsForChain(chainNode.Name),
+			}
+			accountConfigMap.Data = map[string]string{
+				"keyId":   keyId,
+				"address": nodeAddress,
+			}
+			kmsDb, err := cc.ReadKmsDb(nodeAddress)
+			if err != nil {
+				return err
+			}
+			accountConfigMap.BinaryData = map[string][]byte{
+				"kms.db": kmsDb,
+			}
+
+			// set ownerReference
+			_ = ctrl.SetControllerReference(chainNode, accountConfigMap, r.Scheme)
+			// create chain secret
+			err = r.Create(ctx, accountConfigMap)
+			if err != nil {
+				return err
+			}
+			chainNode.Spec.Address = nodeAddress
+			// requeue
+			//return ctrl.Result{Requeue: true}, nil
+
+		} else if err != nil {
+			logger.Error(err, "failed to get node address configmap")
+			return err
+		} else {
+			chainNode.Spec.Address = accountConfigMap.Data["address"]
+		}
+	}
+
+	// set ownerReference
+	// todo: 需要生成账号后再进行绑定？
+	if len(chainNode.OwnerReferences) == 0 {
+		if err := ctrl.SetControllerReference(chainConfig, chainNode, r.Scheme); err != nil {
+			logger.Error(err, "set chain node controller reference failed")
+			return err
+		}
+		logger.Info("set chain node controller reference success")
+	}
+	return nil
+}
+
+func (r *ChainNodeReconciler) SetDefaultStatus(ctx context.Context, chainNode *citacloudv1.ChainNode) (bool, error) {
+	logger := log.FromContext(ctx)
+	if chainNode.Status.Status == "" {
+		chainNode.Status.Status = citacloudv1.NodeInitialized
+		err := r.Client.Status().Update(ctx, chainNode)
+		if err != nil {
+			return false, err
+		}
+		logger.Info("set chain node default status success")
+		return true, nil
+	}
+	return false, nil
+}
+
+func (r *ChainNodeReconciler) ReconcileAll(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
+	if err := r.ReconcileService(ctx, chainConfig, chainNode); err != nil {
+		return err
+	}
+	if err := r.ReconcileConfigMap(ctx, chainConfig, chainNode); err != nil {
+		return err
+	}
+	if err := r.ReconcileLogConfigMap(ctx, chainConfig, chainNode); err != nil {
+		return err
+	}
+	if err := r.ReconcileStatefulSet(ctx, chainConfig, chainNode); err != nil {
+		return err
+	}
+	return nil
+}
+
+//+kubebuilder:rbac:groups=citacloud.rivtower.com,resources=chainnodes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=citacloud.rivtower.com,resources=chainnodes/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=citacloud.rivtower.com,resources=chainnodes/finalizers,verbs=update
+
+func (r *ChainNodeReconciler) Reconcile1(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+	logger.Info(fmt.Sprintf("chainnode %s in reconcile", req.NamespacedName))
+
+	chainNode := &citacloudv1.ChainNode{}
+	if err := r.Get(ctx, req.NamespacedName, chainNode); err != nil {
+		logger.Info(fmt.Sprintf("the chainnode %s has been deleted", req.NamespacedName))
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	chainConfig := &citacloudv1.ChainConfig{}
 
 	if err := r.Get(ctx, types.NamespacedName{Name: chainNode.Spec.ChainName, Namespace: chainNode.Namespace}, chainConfig); err != nil {
 		logger.Info(fmt.Sprintf("the chainconfig %s/%s has been deleted", req.Namespace, chainNode.Spec.ChainName))
@@ -98,7 +263,7 @@ func (r *ChainNodeReconciler) EnsureInit(ctx context.Context, logger logr.Logger
 		accountConfigMap.ObjectMeta = metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s-account", chainConfig.Name, chainNode.Name),
 			Namespace: chainNode.Namespace,
-			Labels:    labelsForChain(chainNode.Name),
+			Labels:    LabelsForChain(chainNode.Name),
 		}
 		accountConfigMap.Data = map[string]string{
 			"keyId":   keyId,
@@ -261,11 +426,11 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 		clusterIPService.ObjectMeta = metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s-cluster-ip", chainConfig.Name, chainNode.Name),
 			Namespace: chainNode.Namespace,
-			Labels:    labelsForChain(chainNode.Name),
+			Labels:    LabelsForChain(chainNode.Name),
 		}
 		TargetPort := intstr.FromInt(NetworkPort)
 		clusterIPService.Spec = corev1.ServiceSpec{
-			Selector: labelsForChain(chainNode.Name),
+			Selector: LabelsForChain(chainNode.Name),
 			Ports: []corev1.ServicePort{
 				{
 					Name:       "network",
@@ -297,7 +462,7 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 		nodeConfigMap.ObjectMeta = metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s-config", chainConfig.Name, chainNode.Name),
 			Namespace: chainNode.Namespace,
-			Labels:    labelsForChain(chainNode.Name),
+			Labels:    LabelsForChain(chainNode.Name),
 		}
 
 		cnService := NewChainNodeService(chainConfig, chainNode)
@@ -326,7 +491,7 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 		logConfigMap.ObjectMeta = metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s-log-config", chainConfig.Name, chainNode.Name),
 			Namespace: chainNode.Namespace,
-			Labels:    labelsForChain(chainNode.Name),
+			Labels:    LabelsForChain(chainNode.Name),
 		}
 
 		cnService := NewChainNodeService(chainConfig, chainNode)
@@ -358,7 +523,7 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      chainNode.Name,
 				Namespace: chainNode.Namespace,
-				Labels:    labelsForChain(chainNode.Name),
+				Labels:    LabelsForChain(chainNode.Name),
 			},
 			Spec: appsv1.StatefulSetSpec{
 				Replicas: pointer.Int32(1),
@@ -367,12 +532,12 @@ func (r *ChainNodeReconciler) EnsureCreate(ctx context.Context, logger logr.Logg
 				},
 				PodManagementPolicy: appsv1.ParallelPodManagement,
 				Selector: &metav1.LabelSelector{
-					MatchLabels: labelsForChain(chainNode.Name),
+					MatchLabels: LabelsForChain(chainNode.Name),
 				},
 				VolumeClaimTemplates: generatePVC(chainNode),
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Labels: labelsForChain(chainNode.Name),
+						Labels: LabelsForChain(chainNode.Name),
 					},
 					Spec: corev1.PodSpec{
 						ShareProcessNamespace: pointer.Bool(true),

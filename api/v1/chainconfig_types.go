@@ -52,8 +52,8 @@ type ChainConfigSpec struct {
 	// admin用户的kms password
 	KmsPassword string `json:"kmsPassword,omitempty"`
 
-	// ImageInfo
-	ImageInfo `json:"imageInfo,omitempty"`
+	// 版本号
+	//Version string `json:"version"`
 }
 
 type ChainStatus string

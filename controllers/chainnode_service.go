@@ -217,7 +217,7 @@ port = 40000
 			networkStr = networkStr + fmt.Sprintf(`[[network_p2p.peers]]
 address = '/dns4/%s/tcp/%d'
 
-`, fmt.Sprintf("%s-%s-cluster-ip", cns.ChainConfig.Name, key), 40000)
+`, GetClusterIPName(cns.ChainConfig.Name, key), 40000)
 		} else {
 			// todo: in different k8s cluster
 		}

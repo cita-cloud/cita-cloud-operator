@@ -68,16 +68,16 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	// check admin account
 	var adminAddress string
 	adminConfigMap := &corev1.ConfigMap{}
-	err := r.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-admin", chainConfig.Name), Namespace: chainConfig.Namespace}, adminConfigMap)
+	err := r.Get(ctx, types.NamespacedName{Name: GetAdminAccountName(chainConfig.Name), Namespace: chainConfig.Namespace}, adminConfigMap)
 	if err != nil && errors.IsNotFound(err) {
 		keyId, adminAddress, err := cc.CreateAccount(chainConfig.Spec.KmsPassword)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 		adminConfigMap.ObjectMeta = metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-admin", chainConfig.Name),
+			Name:      GetAdminAccountName(chainConfig.Name),
 			Namespace: chainConfig.Namespace,
-			Labels:    labelsForChain(chainConfig.Name),
+			Labels:    LabelsForChain(chainConfig.Name),
 		}
 		adminConfigMap.Data = map[string]string{
 			"keyId":   keyId,
@@ -147,7 +147,7 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			chainSecret.ObjectMeta = metav1.ObjectMeta{
 				Name:      chainConfig.Name,
 				Namespace: chainConfig.Namespace,
-				Labels:    labelsForChain(chainConfig.Name),
+				Labels:    LabelsForChain(chainConfig.Name),
 			}
 			chainSecret.Data = map[string][]byte{
 				"cert": cert,

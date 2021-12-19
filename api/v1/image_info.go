@@ -20,3 +20,8 @@ type ImageInfo struct {
 	// kms微服务镜像
 	KmsImage string `json:"kmsImage,omitempty"`
 }
+
+func NewImageInfo(networkImage string, consensusImage string, executorImage string, storageImage string, controllerImage string, kmsImage string) *ImageInfo {
+	return &ImageInfo{NetworkImage: networkImage, ConsensusImage: consensusImage, ExecutorImage: executorImage, StorageImage: storageImage, ControllerImage: controllerImage, KmsImage: kmsImage}
+}
+

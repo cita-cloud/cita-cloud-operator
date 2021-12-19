@@ -49,6 +49,9 @@ type ChainNodeSpec struct {
 
 	// 节点类型
 	Type NodeType `json:"type"`
+
+	// ImageInfo
+	ImageInfo `json:"imageInfo,omitempty"`
 }
 
 type LogLevel string
@@ -74,10 +77,11 @@ const (
 type NodeStatus string
 
 const (
-	NodeInitialized NodeStatus = "Initialized"
-	NodeRunning     NodeStatus = "Running"
-	NodeWarning     NodeStatus = "Warning"
-	NodeError       NodeStatus = "Error"
+	NodeInitializing NodeStatus = "Initializing"
+	NodeInitialized  NodeStatus = "Initialized"
+	NodeRunning      NodeStatus = "Running"
+	NodeWarning      NodeStatus = "Warning"
+	NodeError        NodeStatus = "Error"
 )
 
 // ChainNodeStatus defines the observed state of ChainNode
