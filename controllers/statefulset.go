@@ -16,7 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func (r *ChainNodeReconciler) ReconcileStatefulSet(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
+// ReconcileStatefulSet if statefulset update, then should return true for sync status
+func (r *ChainNodeReconciler) ReconcileStatefulSet(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (bool, error) {
 	logger := log.FromContext(ctx)
 	old := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{Name: chainNode.Name, Namespace: chainNode.Namespace}, old)
@@ -28,29 +29,29 @@ func (r *ChainNodeReconciler) ReconcileStatefulSet(ctx context.Context, chainCon
 			},
 		}
 		if err = r.generateStatefulSet(ctx, chainConfig, chainNode, newObj); err != nil {
-			return err
+			return false, err
 		}
 		logger.Info("create node statefulset....")
-		return r.Create(ctx, newObj)
+		return false, r.Create(ctx, newObj)
 	} else if err != nil {
-		return err
+		return false, err
 	}
 
 	cur := old.DeepCopy()
 	if err := r.generateStatefulSet(ctx, chainConfig, chainNode, cur); err != nil {
-		return err
+		return false, err
 	}
 
 	t1Copy := old.Spec.Template.Spec.Containers
 	t2Copy := cur.Spec.Template.Spec.Containers
 	if IsEqual(t1Copy, t2Copy) {
 		logger.Info("the statefulset part has not changed, go pass")
-		return nil
+		return false, nil
 	}
 	// currently only update the changes under Containers
 	old.Spec.Template.Spec.Containers = cur.Spec.Template.Spec.Containers
 	logger.Info("update node statefulset...")
-	return r.Update(ctx, old)
+	return true, r.Update(ctx, old)
 }
 
 func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, set *appsv1.StatefulSet) error {
@@ -81,7 +82,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 					{
 						Name:            "init",
 						Image:           "busybox:stable",
-						ImagePullPolicy: corev1.PullIfNotPresent,
+						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Command:         []string{"/bin/sh"},
 						Args:            []string{"-c", fmt.Sprintf("if [ ! -f \"%s/kms.db\" ]; then cp %s/kms.db %s;fi;", DataVolumeMountPath, AccountVolumeMountPath, DataVolumeMountPath)},
 						Resources: corev1.ResourceRequirements{
@@ -108,7 +109,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 					{
 						Name:            NetworkContainer,
 						Image:           chainNode.Spec.NetworkImage,
-						ImagePullPolicy: corev1.PullIfNotPresent,
+						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
 								ContainerPort: NetworkPort,
@@ -152,7 +153,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 					{
 						Name:            ConsensusContainer,
 						Image:           chainNode.Spec.ConsensusImage,
-						ImagePullPolicy: corev1.PullIfNotPresent,
+						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
 								ContainerPort: 50001,
@@ -185,7 +186,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 					{
 						Name:            ExecutorContainer,
 						Image:           chainNode.Spec.ExecutorImage,
-						ImagePullPolicy: corev1.PullIfNotPresent,
+						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
 								ContainerPort: 50002,
@@ -224,7 +225,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 					{
 						Name:            StorageContainer,
 						Image:           chainNode.Spec.StorageImage,
-						ImagePullPolicy: corev1.PullIfNotPresent,
+						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
 								ContainerPort: 50003,
@@ -263,7 +264,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 					{
 						Name:            ControllerContainer,
 						Image:           chainNode.Spec.ControllerImage,
-						ImagePullPolicy: corev1.PullIfNotPresent,
+						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
 								ContainerPort: 50004,
@@ -302,7 +303,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 					{
 						Name:            KmsContainer,
 						Image:           chainNode.Spec.KmsImage,
-						ImagePullPolicy: corev1.PullIfNotPresent,
+						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
 								ContainerPort: 50005,

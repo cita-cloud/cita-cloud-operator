@@ -25,5 +25,3 @@ const (
 
 	NetworkPort = 40000
 )
-
-//var NetworkPort int32

@@ -80,8 +80,11 @@ const (
 	NodeInitialized NodeStatus = "Initialized"
 	NodeCreating    NodeStatus = "Creating"
 	NodeRunning     NodeStatus = "Running"
+	NodeWarning     NodeStatus = "Warning"
 	NodeError       NodeStatus = "Error"
 	NodeUpdating    NodeStatus = "Updating"
+	// if chainnode's config modified, chainnode should restart
+	NodeNeedRestart NodeStatus = "NeedRestart"
 )
 
 // ChainNodeStatus defines the observed state of ChainNode

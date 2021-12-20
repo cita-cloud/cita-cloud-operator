@@ -9,6 +9,7 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -35,22 +36,33 @@ func (r *ChainNodeReconciler) SyncStatus(ctx context.Context, chainNode *citaclo
 	if chainNode.Status.Status == citacloudv1.NodeInitialized {
 		chainNode.Status.Status = citacloudv1.NodeCreating
 	} else if chainNode.Status.Status == citacloudv1.NodeCreating {
-		if sts.Status.ReadyReplicas == sts.Status.Replicas {
+		if pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) {
 			chainNode.Status.Status = citacloudv1.NodeRunning
 		}
 	} else if chainNode.Status.Status == citacloudv1.NodeRunning {
-		if sts.Status.ReadyReplicas != sts.Status.Replicas {
+		if !pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) {
 			chainNode.Status.Status = citacloudv1.NodeError
 		}
 	} else if chainNode.Status.Status == citacloudv1.NodeError {
-		if sts.Status.ReadyReplicas == sts.Status.Replicas {
+		if pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) {
 			chainNode.Status.Status = citacloudv1.NodeRunning
 		}
 	} else if chainNode.Status.Status == citacloudv1.NodeUpdating {
-		// todo: set updating status
-		if sts.Status.ReadyReplicas == sts.Status.Replicas {
+		if pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) && sts.Status.CurrentRevision == sts.Status.UpdateRevision {
 			chainNode.Status.Status = citacloudv1.NodeRunning
+			r.updateStatefulSetFlag = false
 		}
+	}
+
+	if r.updateStatefulSetFlag {
+		logger.Info("updating,updating,updating,")
+		// statefulset has modified, set updating status
+		chainNode.Status.Status = citacloudv1.NodeUpdating
+	}
+
+	if r.updateConfigFlag {
+		// chainnode's config modified, set warning status
+		chainNode.Status.Status = citacloudv1.NodeWarning
 	}
 
 	currentStatus := chainNode.Status.DeepCopy()

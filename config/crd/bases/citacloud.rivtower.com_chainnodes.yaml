@@ -60,6 +60,9 @@ spec:
                   networkImage:
                     description: network微服务镜像
                     type: string
+                  pullPolicy:
+                    description: PullPolicy
+                    type: string
                   storageImage:
                     description: storage微服务镜像
                     type: string

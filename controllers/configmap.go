@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func (r *ChainNodeReconciler) ReconcileConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
+func (r *ChainNodeReconciler) ReconcileConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (bool, error) {
 	logger := log.FromContext(ctx)
 	old := &corev1.ConfigMap{}
 	err := r.Get(ctx, types.NamespacedName{Name: GetNodeConfigName(chainNode.Spec.ChainName, chainNode.Name), Namespace: chainNode.Namespace}, old)
@@ -24,25 +24,25 @@ func (r *ChainNodeReconciler) ReconcileConfigMap(ctx context.Context, chainConfi
 			},
 		}
 		if err = r.updateNodeConfigMap(ctx, chainConfig, chainNode, newObj); err != nil {
-			return err
+			return false, err
 		}
 		logger.Info("create node config configmap....")
-		return r.Create(ctx, newObj)
+		return false, r.Create(ctx, newObj)
 	} else if err != nil {
-		return err
+		return false, err
 	}
 
 	cur := old.DeepCopy()
 	if err := r.updateNodeConfigMap(ctx, chainConfig, chainNode, cur); err != nil {
-		return err
+		return false, err
 	}
 	if IsEqual(old, cur) {
 		logger.Info("the configmap part has not changed, go pass")
-		return nil
+		return false, nil
 	}
 
 	logger.Info("update node configmap...")
-	return r.Update(ctx, cur)
+	return true, r.Update(ctx, cur)
 }
 
 func (r *ChainNodeReconciler) updateNodeConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, configMap *corev1.ConfigMap) error {
@@ -61,7 +61,7 @@ func (r *ChainNodeReconciler) updateNodeConfigMap(ctx context.Context, chainConf
 	return nil
 }
 
-func (r *ChainNodeReconciler) ReconcileLogConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
+func (r *ChainNodeReconciler) ReconcileLogConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (bool, error) {
 	logger := log.FromContext(ctx)
 	old := &corev1.ConfigMap{}
 	err := r.Get(ctx, types.NamespacedName{Name: GetLogConfigName(chainNode.Spec.ChainName, chainNode.Name), Namespace: chainNode.Namespace}, old)
@@ -73,25 +73,25 @@ func (r *ChainNodeReconciler) ReconcileLogConfigMap(ctx context.Context, chainCo
 			},
 		}
 		if err = r.updateLogConfigMap(ctx, chainConfig, chainNode, newObj); err != nil {
-			return err
+			return false, err
 		}
 		logger.Info("create log config configmap....")
-		return r.Create(ctx, newObj)
+		return false, r.Create(ctx, newObj)
 	} else if err != nil {
-		return err
+		return false, err
 	}
 
 	cur := old.DeepCopy()
 	if err := r.updateLogConfigMap(ctx, chainConfig, chainNode, cur); err != nil {
-		return err
+		return false, err
 	}
 	if IsEqual(old, cur) {
 		logger.Info("the log configmap part has not changed, go pass")
-		return nil
+		return false, nil
 	}
 
 	logger.Info("update log configmap...")
-	return r.Update(ctx, cur)
+	return true, r.Update(ctx, cur)
 }
 
 func (r *ChainNodeReconciler) updateLogConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, configMap *corev1.ConfigMap) error {

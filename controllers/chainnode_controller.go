@@ -41,7 +41,9 @@ import (
 // ChainNodeReconciler reconciles a ChainNode object
 type ChainNodeReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme                *runtime.Scheme
+	updateConfigFlag      bool
+	updateStatefulSetFlag bool
 }
 
 //+kubebuilder:rbac:groups=citacloud.rivtower.com,resources=chainnodes,verbs=get;list;watch;create;update;patch;delete
@@ -95,6 +97,10 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 func (r *ChainNodeReconciler) SetDefaultSpec(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
 	logger := log.FromContext(ctx)
+
+	if chainNode.Spec.PullPolicy == "" {
+		chainNode.Spec.PullPolicy = corev1.PullIfNotPresent
+	}
 
 	// set default images
 	if chainNode.Spec.NetworkImage == "" {
@@ -198,20 +204,24 @@ func (r *ChainNodeReconciler) SetDefaultStatus(ctx context.Context, chainNode *c
 }
 
 func (r *ChainNodeReconciler) ReconcileAllRecourse(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
+	var err error
 	// reconcile service
 	if err := r.ReconcileService(ctx, chainConfig, chainNode); err != nil {
 		return err
 	}
 	// reconcile node config
-	if err := r.ReconcileConfigMap(ctx, chainConfig, chainNode); err != nil {
+	r.updateConfigFlag, err = r.ReconcileConfigMap(ctx, chainConfig, chainNode)
+	if err != nil {
 		return err
 	}
 	// reconcile log config
-	if err := r.ReconcileLogConfigMap(ctx, chainConfig, chainNode); err != nil {
+	r.updateConfigFlag, err = r.ReconcileLogConfigMap(ctx, chainConfig, chainNode)
+	if err != nil {
 		return err
 	}
 	// reconcile statefulset
-	if err := r.ReconcileStatefulSet(ctx, chainConfig, chainNode); err != nil {
+	r.updateStatefulSetFlag, err = r.ReconcileStatefulSet(ctx, chainConfig, chainNode)
+	if err != nil {
 		return err
 	}
 	return nil
@@ -897,5 +907,6 @@ func (r *ChainNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&citacloudv1.ChainNode{}).
 		Owns(&appsv1.StatefulSet{}).
+		Owns(&corev1.ConfigMap{}).
 		Complete(r)
 }

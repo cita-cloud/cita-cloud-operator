@@ -18,3 +18,5 @@ spec:
   action: "Create"
   type: "Consensus"
   logLevel: info
+  imageInfo:
+    pullPolicy: Always

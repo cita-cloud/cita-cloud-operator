@@ -1,7 +1,12 @@
 package v1
 
+import v1 "k8s.io/api/core/v1"
+
 // +k8s:deepcopy-gen=false
 type ImageInfo struct {
+	// PullPolicy
+	PullPolicy v1.PullPolicy `json:"pullPolicy,omitempty"`
+
 	// network微服务镜像
 	NetworkImage string `json:"networkImage,omitempty"`
 
@@ -20,8 +25,3 @@ type ImageInfo struct {
 	// kms微服务镜像
 	KmsImage string `json:"kmsImage,omitempty"`
 }
-
-func NewImageInfo(networkImage string, consensusImage string, executorImage string, storageImage string, controllerImage string, kmsImage string) *ImageInfo {
-	return &ImageInfo{NetworkImage: networkImage, ConsensusImage: consensusImage, ExecutorImage: executorImage, StorageImage: storageImage, ControllerImage: controllerImage, KmsImage: kmsImage}
-}
-
