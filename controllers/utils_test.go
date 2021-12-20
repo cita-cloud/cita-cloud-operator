@@ -9,28 +9,28 @@ import (
 
 func TestIsEqual(t *testing.T) {
 	sts1 := v1.StatefulSet{
-		TypeMeta:   metav1.TypeMeta{},
+		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sts1",
 		},
-		Spec:       v1.StatefulSetSpec{},
-		Status:     v1.StatefulSetStatus{},
+		Spec:   v1.StatefulSetSpec{},
+		Status: v1.StatefulSetStatus{},
 	}
 	sts2 := &v1.StatefulSet{
-		TypeMeta:   metav1.TypeMeta{},
+		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sts2",
 		},
-		Spec:       v1.StatefulSetSpec{},
-		Status:     v1.StatefulSetStatus{},
+		Spec:   v1.StatefulSetSpec{},
+		Status: v1.StatefulSetStatus{},
 	}
 	sts3 := v1.StatefulSet{
-		TypeMeta:   metav1.TypeMeta{},
+		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sts1",
 		},
-		Spec:       v1.StatefulSetSpec{},
-		Status:     v1.StatefulSetStatus{},
+		Spec:   v1.StatefulSetSpec{},
+		Status: v1.StatefulSetStatus{},
 	}
 	type args struct {
 		obj1 interface{}

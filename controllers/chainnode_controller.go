@@ -81,7 +81,11 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	} else if chainNode.Spec.Action == citacloudv1.NodeCreate {
 		// create all resource
-		if err := r.ReconcileAll(ctx, chainConfig, chainNode); err != nil {
+		if err := r.ReconcileAllRecourse(ctx, chainConfig, chainNode); err != nil {
+			return ctrl.Result{}, err
+		}
+		// sync status
+		if err := r.SyncStatus(ctx, chainNode); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -193,16 +197,20 @@ func (r *ChainNodeReconciler) SetDefaultStatus(ctx context.Context, chainNode *c
 	return false, nil
 }
 
-func (r *ChainNodeReconciler) ReconcileAll(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
+func (r *ChainNodeReconciler) ReconcileAllRecourse(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
+	// reconcile service
 	if err := r.ReconcileService(ctx, chainConfig, chainNode); err != nil {
 		return err
 	}
+	// reconcile node config
 	if err := r.ReconcileConfigMap(ctx, chainConfig, chainNode); err != nil {
 		return err
 	}
+	// reconcile log config
 	if err := r.ReconcileLogConfigMap(ctx, chainConfig, chainNode); err != nil {
 		return err
 	}
+	// reconcile statefulset
 	if err := r.ReconcileStatefulSet(ctx, chainConfig, chainNode); err != nil {
 		return err
 	}
@@ -888,5 +896,6 @@ func getVolumes(chainNode *citacloudv1.ChainNode) []corev1.Volume {
 func (r *ChainNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&citacloudv1.ChainNode{}).
+		Owns(&appsv1.StatefulSet{}).
 		Complete(r)
 }

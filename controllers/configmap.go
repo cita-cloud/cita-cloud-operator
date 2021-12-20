@@ -37,6 +37,7 @@ func (r *ChainNodeReconciler) ReconcileConfigMap(ctx context.Context, chainConfi
 		return err
 	}
 	if IsEqual(old, cur) {
+		logger.Info("the configmap part has not changed, go pass")
 		return nil
 	}
 
@@ -85,6 +86,7 @@ func (r *ChainNodeReconciler) ReconcileLogConfigMap(ctx context.Context, chainCo
 		return err
 	}
 	if IsEqual(old, cur) {
+		logger.Info("the log configmap part has not changed, go pass")
 		return nil
 	}
 

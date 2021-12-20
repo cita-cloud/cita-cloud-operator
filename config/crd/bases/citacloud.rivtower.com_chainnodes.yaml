@@ -112,9 +112,6 @@ spec:
           status:
             description: ChainNodeStatus defines the observed state of ChainNode
             properties:
-              address:
-                description: node address
-                type: string
               status:
                 type: string
             type: object

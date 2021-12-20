@@ -77,18 +77,16 @@ const (
 type NodeStatus string
 
 const (
-	NodeInitializing NodeStatus = "Initializing"
-	NodeInitialized  NodeStatus = "Initialized"
-	NodeRunning      NodeStatus = "Running"
-	NodeWarning      NodeStatus = "Warning"
-	NodeError        NodeStatus = "Error"
+	NodeInitialized NodeStatus = "Initialized"
+	NodeCreating    NodeStatus = "Creating"
+	NodeRunning     NodeStatus = "Running"
+	NodeError       NodeStatus = "Error"
+	NodeUpdating    NodeStatus = "Updating"
 )
 
 // ChainNodeStatus defines the observed state of ChainNode
 type ChainNodeStatus struct {
 	Status NodeStatus `json:"status,omitempty"`
-	// node address
-	Address string `json:"address,omitempty"`
 }
 
 //+kubebuilder:object:root=true

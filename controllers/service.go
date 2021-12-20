@@ -16,11 +16,11 @@ import (
 func (r *ChainNodeReconciler) ReconcileService(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
 	logger := log.FromContext(ctx)
 	old := &corev1.Service{}
-	err := r.Get(ctx, types.NamespacedName{Name: GetClusterIPName(chainNode.Name, chainNode.Spec.ChainName), Namespace: chainNode.Namespace}, old)
+	err := r.Get(ctx, types.NamespacedName{Name: GetClusterIPName(chainNode.Spec.ChainName, chainNode.Name), Namespace: chainNode.Namespace}, old)
 	if errors.IsNotFound(err) {
 		newObj := &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      GetClusterIPName(chainNode.Name, chainNode.Spec.ChainName),
+				Name:      GetClusterIPName(chainNode.Spec.ChainName, chainNode.Name),
 				Namespace: chainNode.Namespace,
 			},
 		}
@@ -48,7 +48,7 @@ func (r *ChainNodeReconciler) ReconcileService(ctx context.Context, chainConfig 
 }
 
 func (r *ChainNodeReconciler) updateService(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, service *corev1.Service) error {
-	labels := MergeLabels(service.Labels, LabelsForNode( chainNode.Spec.ChainName, chainNode.Name))
+	labels := MergeLabels(service.Labels, LabelsForNode(chainNode.Spec.ChainName, chainNode.Name))
 	logger := log.FromContext(ctx)
 	service.Labels = labels
 	if err := ctrl.SetControllerReference(chainNode, service, r.Scheme); err != nil {
