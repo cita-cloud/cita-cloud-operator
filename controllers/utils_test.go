@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"testing"
+	"time"
 
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,4 +65,13 @@ func TestIsEqual(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestTime(t *testing.T) {
+	a := time.Now()
+	time.Sleep(time.Duration(3) * time.Second)
+	if time.Since(a).Seconds() >= 10 {
+		t.Log(">10")
+	}
+	t.Log("<10")
 }

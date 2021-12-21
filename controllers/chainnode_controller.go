@@ -19,7 +19,11 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
 
+	citacloudv1 "github.com/cita-cloud/cita-cloud-operator/api/v1"
+	cmd "github.com/cita-cloud/cita-cloud-operator/pkg/exec"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,11 +35,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	citacloudv1 "github.com/cita-cloud/cita-cloud-operator/api/v1"
-	cmd "github.com/cita-cloud/cita-cloud-operator/pkg/exec"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // ChainNodeReconciler reconciles a ChainNode object
@@ -44,6 +48,7 @@ type ChainNodeReconciler struct {
 	Scheme                *runtime.Scheme
 	updateConfigFlag      bool
 	updateStatefulSetFlag bool
+	startUpdateTime       time.Time
 }
 
 //+kubebuilder:rbac:groups=citacloud.rivtower.com,resources=chainnodes,verbs=get;list;watch;create;update;patch;delete
@@ -906,7 +911,21 @@ func getVolumes(chainNode *citacloudv1.ChainNode) []corev1.Volume {
 func (r *ChainNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&citacloudv1.ChainNode{}).
-		Owns(&appsv1.StatefulSet{}).
+		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(r.statefulSetPredicates())).
+		//Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.ConfigMap{}).
 		Complete(r)
+}
+
+func (r *ChainNodeReconciler) statefulSetPredicates() predicate.Predicate {
+	return predicate.Funcs{
+		UpdateFunc: func(event event.UpdateEvent) bool {
+			curSet := event.ObjectNew.(*appsv1.StatefulSet)
+			oldSet := event.ObjectOld.(*appsv1.StatefulSet)
+			if reflect.DeepEqual(curSet.Status, oldSet.Status) {
+				return false
+			}
+			return true
+		},
+	}
 }

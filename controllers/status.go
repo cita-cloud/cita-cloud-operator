@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	citacloudv1 "github.com/cita-cloud/cita-cloud-operator/api/v1"
 	v1 "k8s.io/api/apps/v1"
@@ -48,15 +49,18 @@ func (r *ChainNodeReconciler) SyncStatus(ctx context.Context, chainNode *citaclo
 			chainNode.Status.Status = citacloudv1.NodeRunning
 		}
 	} else if chainNode.Status.Status == citacloudv1.NodeUpdating {
-		if pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) && sts.Status.CurrentRevision == sts.Status.UpdateRevision {
-			chainNode.Status.Status = citacloudv1.NodeRunning
-			r.updateStatefulSetFlag = false
+		// Check again 5 seconds after the update starts, what a stupid way
+		if time.Since(r.startUpdateTime).Seconds() > 5 {
+			if pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) && sts.Status.CurrentRevision == sts.Status.UpdateRevision {
+				chainNode.Status.Status = citacloudv1.NodeRunning
+				r.updateStatefulSetFlag = false
+			}
 		}
 	}
 
 	if r.updateStatefulSetFlag {
-		logger.Info("updating,updating,updating,")
 		// statefulset has modified, set updating status
+		r.startUpdateTime = time.Now()
 		chainNode.Status.Status = citacloudv1.NodeUpdating
 	}
 
@@ -68,7 +72,13 @@ func (r *ChainNodeReconciler) SyncStatus(ctx context.Context, chainNode *citaclo
 	currentStatus := chainNode.Status.DeepCopy()
 	if !reflect.DeepEqual(oldStatus, currentStatus) {
 		logger.Info(fmt.Sprintf("updating chain node status from [%s] to [%s]...", oldStatus.Status, currentStatus.Status))
-		return r.Status().Update(ctx, chainNode)
+		err = r.Status().Update(ctx, chainNode)
+		if err != nil {
+			logger.Error(err, "update chain node status error")
+			return err
+		}
+		logger.Info("update chain node status success")
+		return nil
 	}
 	logger.Info("chain node status has not changed")
 	return nil
