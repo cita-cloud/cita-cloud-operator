@@ -26,3 +26,11 @@ func GetLogConfigName(chainName string, nodeName string) string {
 func GetClusterIPName(chainName string, nodeName string) string {
 	return fmt.Sprintf("%s-%s-cluster-ip", chainName, nodeName)
 }
+
+func GetCaSecretName(chainName string) string {
+	return fmt.Sprintf("%s-ca-secret", chainName)
+}
+
+func GetNodeCertAndKeySecretName(chainName string, nodeName string) string {
+	return fmt.Sprintf("%s-%s-cert-key", chainName, nodeName)
+}

@@ -9,5 +9,6 @@ spec:
   prevhash: "0x0000000000000000000000000000000000000000000000000000000000000000"
   blockInterval: 3
   blockLimit: 100
-  enableTls: false
+  enableTls: true
+  consensusType: Raft
   kmsPassword: "123456"

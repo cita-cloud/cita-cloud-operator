@@ -88,13 +88,13 @@ spec:
                   externalIp:
                     description: 节点对外public ip
                     type: string
-                  internalIp:
-                    description: 节点集群内部ip
-                    type: string
                   port:
                     description: 节点暴露的端口号
                     format: int32
                     type: integer
+                  status:
+                    description: node status
+                    type: string
                 type: object
               storageClassName:
                 description: pvc对应的storage class, 集群中必须存在的storage class

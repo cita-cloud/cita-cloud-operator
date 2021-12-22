@@ -4,15 +4,22 @@ import (
 	"fmt"
 
 	citacloudv1 "github.com/cita-cloud/cita-cloud-operator/api/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type ChainNodeService struct {
-	ChainConfig *citacloudv1.ChainConfig
-	ChainNode   *citacloudv1.ChainNode
+	ChainConfig          *citacloudv1.ChainConfig
+	ChainNode            *citacloudv1.ChainNode
+	CaSecret             *corev1.Secret
+	NodeCertAndKeySecret *corev1.Secret
 }
 
 func NewChainNodeService(chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) *ChainNodeService {
 	return &ChainNodeService{ChainConfig: chainConfig, ChainNode: chainNode}
+}
+
+func NewChainNodeServiceForTls(chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, caSecret, nodeCertAndKeySecret *corev1.Secret) *ChainNodeService {
+	return &ChainNodeService{ChainConfig: chainConfig, ChainNode: chainNode, CaSecret: caSecret, NodeCertAndKeySecret: nodeCertAndKeySecret}
 }
 
 type ChainNodeServiceImpl interface {
@@ -198,8 +205,15 @@ func (cns *ChainNodeService) GenerateNodeConfig() string {
 	return cns.generateNetwork() + cns.generateConsensus() + cns.generateExecutor() +
 		cns.generateStorage() + cns.generateBasic() + cns.generateController() + cns.generateKms()
 }
-
 func (cns *ChainNodeService) generateNetwork() string {
+	if cns.ChainConfig.Spec.EnableTLS {
+		return cns.generateNetworkTls()
+	} else {
+		return cns.generateNetworkP2P()
+	}
+}
+
+func (cns *ChainNodeService) generateNetworkP2P() string {
 	networkStr := `[network_p2p]
 grpc_port = 50000
 port = 40000
@@ -219,7 +233,53 @@ address = '/dns4/%s/tcp/%d'
 
 `, GetClusterIPName(cns.ChainConfig.Name, key), 40000)
 		} else {
-			// todo: in different k8s cluster
+			networkStr = networkStr + fmt.Sprintf(`[[network_p2p.peers]]
+address = '/dns4/%s/tcp/%d'
+
+`, node.ExternalIp, node.Port)
+		}
+	}
+	return networkStr
+}
+
+func (cns *ChainNodeService) generateNetworkTls() string {
+	networkStr := fmt.Sprintf(`[network_tls]
+ca_cert = """
+%s
+"""
+cert = """
+%s
+"""
+grpc_port = 50000
+listen_port = 40000
+priv_key = """
+%s
+"""
+reconnect_timeout = 5
+
+`, string(cns.CaSecret.Data[CaCert]), string(cns.NodeCertAndKeySecret.Data[NodeCert]), string(cns.NodeCertAndKeySecret.Data[NodeKey]))
+
+	nodeList := cns.ChainConfig.Status.NodeInfoMap
+	for key, node := range nodeList {
+		if node.Address == cns.ChainNode.Spec.Address {
+			// ignore own
+			continue
+		}
+		if node.Cluster == cns.ChainNode.Spec.Cluster {
+			// in the same k8s cluster
+			networkStr = networkStr + fmt.Sprintf(`[[network_tls.peers]]
+domain = '%s'
+host = '%s'
+port = %d
+
+`, node.Domain, GetClusterIPName(cns.ChainConfig.Name, key), 40000)
+		} else {
+			networkStr = networkStr + fmt.Sprintf(`[[network_tls.peers]]
+domain = '%s'
+host = '%s'
+port = %d
+
+`, node.Domain, node.ExternalIp, node.Port)
 		}
 	}
 	return networkStr

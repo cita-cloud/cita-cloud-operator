@@ -49,12 +49,22 @@ type ChainConfigSpec struct {
 	// 开启tls认证
 	EnableTLS bool `json:"enableTls,omitempty"`
 
+	// 共识算法
+	ConsensusType ConsensusType `json:"consensusType"`
+
 	// admin用户的kms password
 	KmsPassword string `json:"kmsPassword,omitempty"`
 
 	// 版本号
 	//Version string `json:"version"`
 }
+
+type ConsensusType string
+
+const (
+	BFT  ConsensusType = "BTF"
+	Raft ConsensusType = "Raft"
+)
 
 type ChainStatus string
 

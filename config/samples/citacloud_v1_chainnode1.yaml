@@ -7,7 +7,6 @@ spec:
   nodeInfo:
     cluster: k8s-1
     domain: www.hello.com
-    internalIp: localhost
     port: 9630
   chainName: my-chainconfig
   kmsPassword: "123456"

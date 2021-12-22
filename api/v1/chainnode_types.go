@@ -58,6 +58,7 @@ type LogLevel string
 
 const (
 	Info LogLevel = "info"
+	Warn LogLevel = "warn"
 )
 
 type NodeType string
@@ -72,6 +73,8 @@ type NodeAction string
 const (
 	NodeInitialize NodeAction = "Initialize"
 	NodeCreate     NodeAction = "Create"
+	NodeStop       NodeAction = "Stop"
+	NodeStart      NodeAction = "Start"
 )
 
 type NodeStatus string

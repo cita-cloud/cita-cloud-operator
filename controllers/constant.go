@@ -24,4 +24,11 @@ const (
 	StorageLogConfigFile    = "storage-log4rs.yaml"
 
 	NetworkPort = 40000
+
+	CaCert = "cert.pem"
+	CaKey  = "key.pem"
+
+	NodeCert = "cert.pem"
+	NodeCsr  = "csr.pem"
+	NodeKey  = "key.pem"
 )

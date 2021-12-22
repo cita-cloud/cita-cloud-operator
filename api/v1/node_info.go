@@ -11,12 +11,12 @@ type NodeInfo struct {
 	// 节点地址
 	Address string `json:"address,omitempty"`
 
-	// 节点集群内部ip
-	InternalIp string `json:"internalIp,omitempty"`
-
 	// 节点对外public ip
 	ExternalIp string `json:"externalIp,omitempty"`
 
 	// 节点暴露的端口号
 	Port int32 `json:"port,omitempty"`
+
+	// node status
+	Status NodeStatus `json:"status,omitempty"`
 }

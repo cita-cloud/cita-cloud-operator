@@ -47,6 +47,9 @@ spec:
                 description: 块大小限制
                 format: int32
                 type: integer
+              consensusType:
+                description: 共识算法
+                type: string
               enableTls:
                 description: 开启tls认证
                 type: boolean
@@ -71,6 +74,7 @@ spec:
             required:
             - blockInterval
             - blockLimit
+            - consensusType
             - id
             - prevhash
             - timestamp
@@ -102,13 +106,13 @@ spec:
                     externalIp:
                       description: 节点对外public ip
                       type: string
-                    internalIp:
-                      description: 节点集群内部ip
-                      type: string
                     port:
                       description: 节点暴露的端口号
                       format: int32
                       type: integer
+                    status:
+                      description: node status
+                      type: string
                   type: object
                 description: 链下节点信息
                 type: object

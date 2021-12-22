@@ -52,8 +52,26 @@ func (r *ChainNodeReconciler) updateNodeConfigMap(ctx context.Context, chainConf
 		logger.Error(err, "node configmap SetControllerReference error")
 		return err
 	}
+	var cnService *ChainNodeService
+	if chainConfig.Spec.EnableTLS {
+		// todo: reflect
+		// get chain ca secret
+		caSecret := &corev1.Secret{}
+		if err := r.Get(ctx, types.NamespacedName{Name: GetCaSecretName(chainConfig.Name), Namespace: chainConfig.Namespace}, caSecret); err != nil {
+			logger.Error(err, "get chain secret error")
+			return err
+		}
+		// get node secret
+		nodeCertAndKeySecret := &corev1.Secret{}
+		if err := r.Get(ctx, types.NamespacedName{Name: GetNodeCertAndKeySecretName(chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, nodeCertAndKeySecret); err != nil {
+			logger.Error(err, "get node secret error")
+			return err
+		}
 
-	cnService := NewChainNodeService(chainConfig, chainNode)
+		cnService = NewChainNodeServiceForTls(chainConfig, chainNode, caSecret, nodeCertAndKeySecret)
+	} else {
+		cnService = NewChainNodeService(chainConfig, chainNode)
+	}
 
 	configMap.Data = map[string]string{
 		NodeConfigFile: cnService.GenerateNodeConfig(),
