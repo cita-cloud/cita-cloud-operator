@@ -62,6 +62,13 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 		logger.Error(err, "node statefulset SetControllerReference error")
 		return err
 	}
+	var networkCmdStr string
+	if chainConfig.Spec.EnableTLS {
+		networkCmdStr = "network run --stdout"
+	} else {
+		networkCmdStr = "network run -p 50000"
+	}
+
 	set.Spec = appsv1.StatefulSetSpec{
 		Replicas: pointer.Int32(1),
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
@@ -125,7 +132,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						Command: []string{
 							"sh",
 							"-c",
-							"network run -p 50000",
+							networkCmdStr,
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
