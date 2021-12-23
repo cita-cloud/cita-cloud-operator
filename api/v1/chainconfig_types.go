@@ -35,26 +35,36 @@ type ChainConfigSpec struct {
 	Validators []string `json:"validators,omitempty"`
 
 	// 创世块的时间戳
-	Timestamp string `json:"timestamp,omitempty"`
+	Timestamp int64 `json:"timestamp"`
 
 	// 创世块的prevhash
-	PrevHash string `json:"prevhash,omitempty"`
+	PrevHash string `json:"prevhash"`
 
 	// 出块间隔
-	BlockInterval string `json:"blockInterval,omitempty"`
+	BlockInterval int32 `json:"blockInterval"`
 
 	// 块大小限制
-	BlockLimit string `json:"blockLimit,omitempty"`
+	BlockLimit int32 `json:"blockLimit"`
 
 	// 开启tls认证
 	EnableTLS bool `json:"enableTls,omitempty"`
 
+	// 共识算法
+	ConsensusType ConsensusType `json:"consensusType"`
+
 	// admin用户的kms password
 	KmsPassword string `json:"kmsPassword,omitempty"`
 
-	// ImageInfo
-	ImageInfo `json:"imageInfo,omitempty"`
+	// 版本号
+	//Version string `json:"version"`
 }
+
+type ConsensusType string
+
+const (
+	BFT  ConsensusType = "BTF"
+	Raft ConsensusType = "Raft"
+)
 
 type ChainStatus string
 
@@ -80,7 +90,7 @@ type ChainConfigStatus struct {
 	// 详情
 	Message string `json:"message,omitempty"`
 	// 链下节点信息
-	NodeInfos []NodeInfo `json:"nodeInfos,omitempty"`
+	NodeInfoMap map[string]NodeInfo `json:"nodeInfoMap,omitempty"`
 }
 
 //+kubebuilder:object:root=true

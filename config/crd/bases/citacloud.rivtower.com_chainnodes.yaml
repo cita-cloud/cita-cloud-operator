@@ -36,9 +36,37 @@ spec:
           spec:
             description: ChainNodeSpec defines the desired state of ChainNode
             properties:
+              action:
+                description: 期望的状态
+                type: string
               chainName:
                 description: 对应的链级配置名称
                 type: string
+              imageInfo:
+                description: ImageInfo
+                properties:
+                  consensusImage:
+                    description: consensus微服务镜像
+                    type: string
+                  controllerImage:
+                    description: controller微服务镜像
+                    type: string
+                  executorImage:
+                    description: executor微服务镜像
+                    type: string
+                  kmsImage:
+                    description: kms微服务镜像
+                    type: string
+                  networkImage:
+                    description: network微服务镜像
+                    type: string
+                  pullPolicy:
+                    description: PullPolicy
+                    type: string
+                  storageImage:
+                    description: storage微服务镜像
+                    type: string
+                type: object
               kmsPassword:
                 description: 节点用户的kms password
                 type: string
@@ -60,14 +88,12 @@ spec:
                   externalIp:
                     description: 节点对外public ip
                     type: string
-                  internalIp:
-                    description: 节点集群内部ip
-                    type: string
-                  name:
-                    description: 对应节点名称
-                    type: string
                   port:
                     description: 节点暴露的端口号
+                    format: int32
+                    type: integer
+                  status:
+                    description: node status
                     type: string
                 type: object
               storageClassName:
@@ -77,16 +103,18 @@ spec:
                 description: 申请的pvc大小
                 format: int64
                 type: integer
+              type:
+                description: 节点类型
+                type: string
             required:
+            - action
             - nodeInfo
             - storageSize
+            - type
             type: object
           status:
             description: ChainNodeStatus defines the observed state of ChainNode
             properties:
-              address:
-                description: node address
-                type: string
               status:
                 type: string
             type: object

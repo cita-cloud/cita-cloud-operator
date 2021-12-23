@@ -41,9 +41,14 @@ spec:
                 type: string
               blockInterval:
                 description: 出块间隔
-                type: string
+                format: int32
+                type: integer
               blockLimit:
                 description: 块大小限制
+                format: int32
+                type: integer
+              consensusType:
+                description: 共识算法
                 type: string
               enableTls:
                 description: 开启tls认证
@@ -51,28 +56,6 @@ spec:
               id:
                 description: chain id
                 type: string
-              imageInfo:
-                description: ImageInfo
-                properties:
-                  consensusImage:
-                    description: consensus微服务镜像
-                    type: string
-                  controllerImage:
-                    description: controller微服务镜像
-                    type: string
-                  executorImage:
-                    description: executor微服务镜像
-                    type: string
-                  kmsImage:
-                    description: kms微服务镜像
-                    type: string
-                  networkImage:
-                    description: network微服务镜像
-                    type: string
-                  storageImage:
-                    description: storage微服务镜像
-                    type: string
-                type: object
               kmsPassword:
                 description: admin用户的kms password
                 type: string
@@ -81,14 +64,20 @@ spec:
                 type: string
               timestamp:
                 description: 创世块的时间戳
-                type: string
+                format: int64
+                type: integer
               validators:
                 description: 共识节点的地址列表
                 items:
                   type: string
                 type: array
             required:
+            - blockInterval
+            - blockLimit
+            - consensusType
             - id
+            - prevhash
+            - timestamp
             type: object
           status:
             description: ChainConfigStatus defines the observed state of ChainConfig
@@ -102,9 +91,8 @@ spec:
               message:
                 description: 详情
                 type: string
-              nodeInfos:
-                description: 链下节点信息
-                items:
+              nodeInfoMap:
+                additionalProperties:
                   properties:
                     address:
                       description: 节点地址
@@ -118,17 +106,16 @@ spec:
                     externalIp:
                       description: 节点对外public ip
                       type: string
-                    internalIp:
-                      description: 节点集群内部ip
-                      type: string
-                    name:
-                      description: 对应节点名称
-                      type: string
                     port:
                       description: 节点暴露的端口号
+                      format: int32
+                      type: integer
+                    status:
+                      description: node status
                       type: string
                   type: object
-                type: array
+                description: 链下节点信息
+                type: object
               status:
                 description: admin账户的地址 AdminAddress string `json:"adminAddress,omitempty"`
                   状态

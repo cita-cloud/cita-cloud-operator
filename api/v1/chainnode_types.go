@@ -36,29 +36,63 @@ type ChainNodeSpec struct {
 	KmsPassword string `json:"kmsPassword,omitempty"`
 
 	// 日志等级
-	LogLevel string `json:"logLevel,omitempty"`
+	LogLevel LogLevel `json:"logLevel,omitempty"`
 
 	// pvc对应的storage class, 集群中必须存在的storage class
 	StorageClassName *string `json:"storageClassName,omitempty"`
 
 	// 申请的pvc大小
 	StorageSize *int64 `json:"storageSize"`
+
+	// 期望的状态
+	Action NodeAction `json:"action"`
+
+	// 节点类型
+	Type NodeType `json:"type"`
+
+	// ImageInfo
+	ImageInfo `json:"imageInfo,omitempty"`
 }
+
+type LogLevel string
+
+const (
+	Info LogLevel = "info"
+	Warn LogLevel = "warn"
+)
+
+type NodeType string
+
+const (
+	Consensus NodeType = "Consensus"
+	Ordinary  NodeType = "Ordinary"
+)
+
+type NodeAction string
+
+const (
+	NodeInitialize NodeAction = "Initialize"
+	NodeCreate     NodeAction = "Create"
+	NodeStop       NodeAction = "Stop"
+	NodeStart      NodeAction = "Start"
+)
 
 type NodeStatus string
 
 const (
-	Creating NodeStatus = "Creating"
-	//Running  NodeStatus = "Running"
-	Warning NodeStatus = "Warning"
-	Error   NodeStatus = "Error"
+	NodeInitialized NodeStatus = "Initialized"
+	NodeCreating    NodeStatus = "Creating"
+	NodeRunning     NodeStatus = "Running"
+	NodeWarning     NodeStatus = "Warning"
+	NodeError       NodeStatus = "Error"
+	NodeUpdating    NodeStatus = "Updating"
+	// if chainnode's config modified, chainnode should restart
+	NodeNeedRestart NodeStatus = "NeedRestart"
 )
 
 // ChainNodeStatus defines the observed state of ChainNode
 type ChainNodeStatus struct {
 	Status NodeStatus `json:"status,omitempty"`
-	// node address
-	Address string `json:"address,omitempty"`
 }
 
 //+kubebuilder:object:root=true
