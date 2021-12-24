@@ -83,13 +83,22 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if updated || err != nil {
 			return ctrl.Result{}, err
 		}
-	} else if chainNode.Spec.Action == citacloudv1.NodeCreate {
+	} else if chainNode.Spec.Action == citacloudv1.NodeStart {
 		// create all resource
 		if err := r.ReconcileAllRecourse(ctx, chainConfig, chainNode); err != nil {
 			return ctrl.Result{}, err
 		}
 		// sync status
-		if err := r.SyncStatus(ctx, chainNode); err != nil {
+		if err := r.SyncRunningStatus(ctx, chainNode); err != nil {
+			return ctrl.Result{}, err
+		}
+	} else if chainNode.Spec.Action == citacloudv1.NodeStop {
+		_, err := r.ReconcileStatefulSet(ctx, chainConfig, chainNode)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		// sync status
+		if err := r.SyncStopStatus(ctx, chainNode); err != nil {
 			return ctrl.Result{}, err
 		}
 	}

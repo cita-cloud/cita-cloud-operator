@@ -15,7 +15,7 @@ spec:
   storageClassName: "nas-client-provisioner"
 #  storageClassName: "local-path"
 #  action: "Initialize"
-  action: "Create"
+  action: "Start"
   type: "Consensus"
   logLevel: info
   imageInfo:

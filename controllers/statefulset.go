@@ -44,17 +44,23 @@ func (r *ChainNodeReconciler) ReconcileStatefulSet(ctx context.Context, chainCon
 
 	t1Copy := old.Spec.Template.Spec.Containers
 	t2Copy := cur.Spec.Template.Spec.Containers
-	if IsEqual(t1Copy, t2Copy) {
+	if IsEqual(t1Copy, t2Copy) && *old.Spec.Replicas == *cur.Spec.Replicas {
 		logger.Info("the statefulset part has not changed, go pass")
 		return false, nil
 	}
 	// currently only update the changes under Containers
 	old.Spec.Template.Spec.Containers = cur.Spec.Template.Spec.Containers
+	old.Spec.Replicas = cur.Spec.Replicas
 	logger.Info("update node statefulset...")
 	return true, r.Update(ctx, old)
 }
 
 func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, set *appsv1.StatefulSet) error {
+	replica := int32(1)
+	if chainNode.Spec.Action == citacloudv1.NodeStop {
+		replica = 0
+	}
+
 	labels := MergeLabels(set.Labels, LabelsForNode(chainNode.Spec.ChainName, chainNode.Name))
 	logger := log.FromContext(ctx)
 	set.Labels = labels
@@ -70,7 +76,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 	}
 
 	set.Spec = appsv1.StatefulSetSpec{
-		Replicas: pointer.Int32(1),
+		Replicas: pointer.Int32(replica),
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
 		},
