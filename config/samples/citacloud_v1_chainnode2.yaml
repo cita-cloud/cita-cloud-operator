@@ -13,9 +13,8 @@ spec:
   kmsPassword: "123456"
   storageSize: 21474836480
   storageClassName: "nas-client-provisioner"
-#  storageClassName: "local-path"
-#  action: "Initialize"
-  action: "Start"
+  action: "Initialize"
+#  action: "Start"
   type: "Consensus"
   logLevel: info
   imageInfo:

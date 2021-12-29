@@ -11,4 +11,4 @@ spec:
   blockLimit: 100
   enableTls: false
   consensusType: Raft
-  kmsPassword: "123456"
+  action: Online

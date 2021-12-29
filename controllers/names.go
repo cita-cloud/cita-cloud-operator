@@ -34,3 +34,11 @@ func GetCaSecretName(chainName string) string {
 func GetNodeCertAndKeySecretName(chainName string, nodeName string) string {
 	return fmt.Sprintf("%s-%s-cert-key", chainName, nodeName)
 }
+
+func GetAccountConfigmap(chainName, account string) string {
+	return fmt.Sprintf("%s-%s", chainName, account)
+}
+
+func GetAccountCertAndKeySecretName(chainName, account string) string {
+	return fmt.Sprintf("%s-%s-cert-key", chainName, account)
+}

@@ -1,0 +1,11 @@
+apiVersion: citacloud.rivtower.com/v1
+kind: Account
+metadata:
+  name: node3-account
+  namespace: cita
+spec:
+  chain: my-chainconfig
+  role: Ordinary
+  kmsPassword: "123456"
+  domain: www.node3.com
+

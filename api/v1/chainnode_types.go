@@ -65,7 +65,7 @@ type NodeType string
 
 const (
 	Consensus NodeType = "Consensus"
-	Ordinary  NodeType = "Ordinary"
+	//Ordinary  NodeType = "Ordinary"
 )
 
 type NodeAction string

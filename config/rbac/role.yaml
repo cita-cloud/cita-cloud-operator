@@ -9,6 +9,32 @@ rules:
 - apiGroups:
   - citacloud.rivtower.com
   resources:
+  - accounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - citacloud.rivtower.com
+  resources:
+  - accounts/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - citacloud.rivtower.com
+  resources:
+  - accounts/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - citacloud.rivtower.com
+  resources:
   - chainconfigs
   verbs:
   - create

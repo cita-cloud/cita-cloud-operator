@@ -106,6 +106,35 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&controllers.AccountReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Account")
+		os.Exit(1)
+	}
+
+	// 设置account的chain索引
+	err = mgr.GetCache().IndexField(context.Background(), &citacloudv1.Account{}, "spec.chain", func(o client.Object) []string {
+		var res []string
+		res = append(res, o.(*citacloudv1.Account).Spec.Chain)
+		return res
+	})
+	if err != nil {
+		setupLog.Error(err, "set account.spec.chain index field failed", "controller", "Account")
+		os.Exit(1)
+	}
+	// 设置account的role索引
+	err = mgr.GetCache().IndexField(context.Background(), &citacloudv1.Account{}, "spec.role", func(o client.Object) []string {
+		var res []string
+		res = append(res, string(o.(*citacloudv1.Account).Spec.Role))
+		return res
+	})
+	if err != nil {
+		setupLog.Error(err, "set account.spec.role index field failed", "controller", "Account")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

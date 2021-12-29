@@ -312,28 +312,32 @@ storage_port = 50003
 }
 
 func (cns *ChainNodeService) generateBasic() string {
-	basicStr := fmt.Sprintf(`[genesis_block]
-prevhash = '%s'
-timestamp = %d
-
-[system_config]
-admin = '%s'
-block_interval = %d
-block_limit = %d
-chain_id = '%s'
-version = 0
-validators = [
-`, cns.ChainConfig.Spec.PrevHash, cns.ChainConfig.Spec.Timestamp, cns.ChainConfig.Spec.AdminAddress,
-		cns.ChainConfig.Spec.BlockInterval, cns.ChainConfig.Spec.BlockLimit, cns.ChainConfig.Spec.Id)
-	for _, validator := range cns.ChainConfig.Spec.Validators {
-		s := fmt.Sprintf(`    '%s',
-`, validator)
-		basicStr = basicStr + s
-	}
-	return basicStr + `]
-
-`
+	return ""
 }
+
+//func (cns *ChainNodeService) generateBasic() string {
+//	basicStr := fmt.Sprintf(`[genesis_block]
+//prevhash = '%s'
+//timestamp = %d
+//
+//[system_config]
+//admin = '%s'
+//block_interval = %d
+//block_limit = %d
+//chain_id = '%s'
+//version = 0
+//validators = [
+//`, cns.ChainConfig.Spec.PrevHash, cns.ChainConfig.Spec.Timestamp, cns.ChainConfig.Status.AdminAccount.Address,
+//		cns.ChainConfig.Spec.BlockInterval, cns.ChainConfig.Spec.BlockLimit, cns.ChainConfig.Spec.Id)
+//	for _, validator := range cns.ChainConfig.Spec.Validators {
+//		s := fmt.Sprintf(`    '%s',
+//`, validator)
+//		basicStr = basicStr + s
+//	}
+//	return basicStr + `]
+//
+//`
+//}
 
 func (cns *ChainNodeService) generateController() string {
 	return fmt.Sprintf(`[controller]
