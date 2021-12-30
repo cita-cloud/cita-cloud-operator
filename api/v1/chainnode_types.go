@@ -32,9 +32,6 @@ type ChainNodeSpec struct {
 	// 对应的链级配置名称
 	ChainName string `json:"chainName,omitempty"`
 
-	// 节点用户的kms password
-	KmsPassword string `json:"kmsPassword,omitempty"`
-
 	// 日志等级
 	LogLevel LogLevel `json:"logLevel,omitempty"`
 
@@ -47,9 +44,6 @@ type ChainNodeSpec struct {
 	// 期望的状态
 	Action NodeAction `json:"action"`
 
-	// 节点类型
-	Type NodeType `json:"type"`
-
 	// ImageInfo
 	ImageInfo `json:"imageInfo,omitempty"`
 }
@@ -61,18 +55,11 @@ const (
 	Warn LogLevel = "warn"
 )
 
-type NodeType string
-
-const (
-	Consensus NodeType = "Consensus"
-	Ordinary  NodeType = "Ordinary"
-)
-
 type NodeAction string
 
 const (
 	NodeInitialize NodeAction = "Initialize"
-	NodeCreate     NodeAction = "Create"
+	//NodeCreate     NodeAction = "Create"
 	NodeStop       NodeAction = "Stop"
 	NodeStart      NodeAction = "Start"
 )
@@ -81,13 +68,16 @@ type NodeStatus string
 
 const (
 	NodeInitialized NodeStatus = "Initialized"
-	NodeCreating    NodeStatus = "Creating"
+	//NodeCreating    NodeStatus = "Creating"
+	NodeStarting    NodeStatus = "Starting"
 	NodeRunning     NodeStatus = "Running"
 	NodeWarning     NodeStatus = "Warning"
 	NodeError       NodeStatus = "Error"
 	NodeUpdating    NodeStatus = "Updating"
 	// if chainnode's config modified, chainnode should restart
 	NodeNeedRestart NodeStatus = "NeedRestart"
+	NodeStopping    NodeStatus = "Stopping"
+	NodeStopped     NodeStatus = "Stopped"
 )
 
 // ChainNodeStatus defines the observed state of ChainNode

@@ -36,8 +36,8 @@ spec:
           spec:
             description: ChainConfigSpec defines the desired state of ChainConfig
             properties:
-              adminAddress:
-                description: admin账户的地址
+              action:
+                description: 版本号 Version string `json:"version"` 期望的状态
                 type: string
               blockInterval:
                 description: 出块间隔
@@ -56,9 +56,6 @@ spec:
               id:
                 description: chain id
                 type: string
-              kmsPassword:
-                description: admin用户的kms password
-                type: string
               prevhash:
                 description: 创世块的prevhash
                 type: string
@@ -66,11 +63,6 @@ spec:
                 description: 创世块的时间戳
                 format: int64
                 type: integer
-              validators:
-                description: 共识节点的地址列表
-                items:
-                  type: string
-                type: array
             required:
             - blockInterval
             - blockLimit
@@ -82,20 +74,22 @@ spec:
           status:
             description: ChainConfigStatus defines the observed state of ChainConfig
             properties:
-              caCert:
-                description: ca证书
-                type: string
-              caKey:
-                description: ca key
-                type: string
+              adminAccount:
+                description: admin账户信息
+                properties:
+                  address:
+                    type: string
+                  name:
+                    type: string
+                type: object
               message:
                 description: 详情
                 type: string
               nodeInfoMap:
                 additionalProperties:
                   properties:
-                    address:
-                      description: 节点地址
+                    account:
+                      description: 账号，不为空
                       type: string
                     cluster:
                       description: 所属的k8s集群
@@ -113,13 +107,22 @@ spec:
                     status:
                       description: node status
                       type: string
+                  required:
+                  - account
                   type: object
                 description: 链下节点信息
                 type: object
               status:
-                description: admin账户的地址 AdminAddress string `json:"adminAddress,omitempty"`
-                  状态
+                description: 状态
                 type: string
+              validatorAccountMap:
+                additionalProperties:
+                  properties:
+                    address:
+                      type: string
+                  type: object
+                description: 共识节点账户信息
+                type: object
             type: object
         type: object
     served: true

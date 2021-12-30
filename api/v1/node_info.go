@@ -8,8 +8,8 @@ type NodeInfo struct {
 	// Domain
 	Domain string `json:"domain,omitempty"`
 
-	// 节点地址
-	Address string `json:"address,omitempty"`
+	// 账号，不为空
+	Account string `json:"account"`
 
 	// 节点对外public ip
 	ExternalIp string `json:"externalIp,omitempty"`

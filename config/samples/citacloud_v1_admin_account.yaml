@@ -1,0 +1,10 @@
+apiVersion: citacloud.rivtower.com/v1
+kind: Account
+metadata:
+  name: admin
+  namespace: cita
+spec:
+  chain: my-chainconfig
+  role: Admin
+  kmsPassword: "123456"
+

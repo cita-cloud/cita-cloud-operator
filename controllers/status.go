@@ -16,7 +16,7 @@ import (
 
 // SyncStatus
 // 如果status == Initialized，则判断当前pod的ready
-func (r *ChainNodeReconciler) SyncStatus(ctx context.Context, chainNode *citacloudv1.ChainNode) error {
+func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainNode *citacloudv1.ChainNode) error {
 	logger := log.FromContext(ctx)
 	//var updateFlag bool
 	oldStatus := chainNode.Status.DeepCopy()
@@ -24,9 +24,9 @@ func (r *ChainNodeReconciler) SyncStatus(ctx context.Context, chainNode *citaclo
 	sts := &v1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{Name: chainNode.Name, Namespace: chainNode.Namespace}, sts)
 	if errors.IsNotFound(err) {
-		chainNode.Status.Status = citacloudv1.NodeCreating
+		chainNode.Status.Status = citacloudv1.NodeStarting
 		if !reflect.DeepEqual(oldStatus, chainNode.Status) {
-			logger.Info("updating chain node status [Creating]...")
+			logger.Info("updating chain node status [Starting]...")
 			return r.Status().Update(ctx, chainNode)
 		}
 		return nil
@@ -35,8 +35,8 @@ func (r *ChainNodeReconciler) SyncStatus(ctx context.Context, chainNode *citaclo
 	}
 
 	if chainNode.Status.Status == citacloudv1.NodeInitialized {
-		chainNode.Status.Status = citacloudv1.NodeCreating
-	} else if chainNode.Status.Status == citacloudv1.NodeCreating {
+		chainNode.Status.Status = citacloudv1.NodeStarting
+	} else if chainNode.Status.Status == citacloudv1.NodeStarting {
 		if pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) {
 			chainNode.Status.Status = citacloudv1.NodeRunning
 		}
@@ -56,6 +56,9 @@ func (r *ChainNodeReconciler) SyncStatus(ctx context.Context, chainNode *citaclo
 				r.updateStatefulSetFlag = false
 			}
 		}
+	} else if chainNode.Status.Status == citacloudv1.NodeStopped {
+		chainNode.Status.Status = citacloudv1.NodeStarting
+		r.updateStatefulSetFlag = false
 	}
 
 	if r.updateStatefulSetFlag {
@@ -67,6 +70,42 @@ func (r *ChainNodeReconciler) SyncStatus(ctx context.Context, chainNode *citaclo
 	if r.updateConfigFlag {
 		// chainnode's config modified, set warning status
 		chainNode.Status.Status = citacloudv1.NodeWarning
+	}
+
+	currentStatus := chainNode.Status.DeepCopy()
+	if !reflect.DeepEqual(oldStatus, currentStatus) {
+		logger.Info(fmt.Sprintf("updating chain node status from [%s] to [%s]...", oldStatus.Status, currentStatus.Status))
+		err = r.Status().Update(ctx, chainNode)
+		if err != nil {
+			logger.Error(err, "update chain node status error")
+			return err
+		}
+		logger.Info("update chain node status success")
+		return nil
+	}
+	logger.Info("chain node status has not changed")
+	return nil
+}
+
+func (r *ChainNodeReconciler) SyncStopStatus(ctx context.Context, chainNode *citacloudv1.ChainNode) error {
+	logger := log.FromContext(ctx)
+	//var updateFlag bool
+	oldStatus := chainNode.Status.DeepCopy()
+
+	sts := &v1.StatefulSet{}
+	err := r.Get(ctx, types.NamespacedName{Name: chainNode.Name, Namespace: chainNode.Namespace}, sts)
+	if err != nil {
+		return err
+	}
+	if chainNode.Status.Status != citacloudv1.NodeStopped {
+		//if sts.Status.CurrentReplicas == 1 {
+			chainNode.Status.Status = citacloudv1.NodeStopping
+		//}
+	}
+	if chainNode.Status.Status == citacloudv1.NodeStopping {
+		if sts.Status.CurrentReplicas == 0 && sts.Status.Replicas == 0 {
+			chainNode.Status.Status = citacloudv1.NodeStopped
+		}
 	}
 
 	currentStatus := chainNode.Status.DeepCopy()

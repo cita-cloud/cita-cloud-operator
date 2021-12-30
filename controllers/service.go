@@ -35,16 +35,6 @@ func (r *ChainNodeReconciler) ReconcileService(ctx context.Context, chainConfig 
 
 	logger.Info("service update is currently not supported, go pass")
 	return nil
-	//cur := old.DeepCopy()
-	//if err := r.updateService(ctx, chainConfig, chainNode, cur); err != nil {
-	//	return err
-	//}
-	//if IsEqual(old, cur) {
-	//	return nil
-	//}
-	//
-	//logger.Info("update node service...")
-	//return r.Update(ctx, cur)
 }
 
 func (r *ChainNodeReconciler) updateService(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, service *corev1.Service) error {

@@ -28,12 +28,6 @@ type ChainConfigSpec struct {
 	// chain id
 	Id string `json:"id"`
 
-	// admin账户的地址
-	AdminAddress string `json:"adminAddress,omitempty"`
-
-	// 共识节点的地址列表
-	Validators []string `json:"validators,omitempty"`
-
 	// 创世块的时间戳
 	Timestamp int64 `json:"timestamp"`
 
@@ -52,11 +46,8 @@ type ChainConfigSpec struct {
 	// 共识算法
 	ConsensusType ConsensusType `json:"consensusType"`
 
-	// admin用户的kms password
-	KmsPassword string `json:"kmsPassword,omitempty"`
-
-	// 版本号
-	//Version string `json:"version"`
+	// 期望的状态
+	Action ChainStatus `json:"action,omitempty"`
 }
 
 type ConsensusType string
@@ -75,16 +66,18 @@ const (
 	Running ChainStatus = "Running"
 	// 治理维护状态
 	Maintenance ChainStatus = "Maintenance"
+	// 公示中状态
+	Publicizing ChainStatus = "Publicizing"
+	// 上线
+	Online ChainStatus = "Online"
 )
 
 // ChainConfigStatus defines the observed state of ChainConfig
 type ChainConfigStatus struct {
-	// ca证书
-	CaCert string `json:"caCert,omitempty"`
-	// ca key
-	CaKey string `json:"caKey,omitempty"`
-	// admin账户的地址
-	//AdminAddress string `json:"adminAddress,omitempty"`
+	// admin账户信息
+	AdminAccount AdminAccountInfo `json:"adminAccount,omitempty"`
+	// 共识节点账户信息
+	ValidatorAccountMap map[string]ValidatorAccountInfo `json:"validatorAccountMap,omitempty"`
 	// 状态
 	Status ChainStatus `json:"status,omitempty"`
 	// 详情
