@@ -62,66 +62,6 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
-	// init chain and init chain config
-	//cc := cmd.NewCloudConfig(chainConfig.Name, ".")
-	//if !cc.Exist() {
-	//	logger.Info(fmt.Sprintf("config dir %s/%s not found, we will init it", ".", chainConfig.Name))
-	//	err := cc.Init(chainConfig.Spec.Id)
-	//	if err != nil {
-	//		return ctrl.Result{}, err
-	//	}
-	//}
-
-	//if chainConfig.Spec.EnableTLS {
-	//	caSecret := &corev1.Secret{}
-	//	err := r.Get(ctx, types.NamespacedName{Name: GetCaSecretName(chainConfig.Name), Namespace: chainConfig.Namespace}, caSecret)
-	//	if err != nil && errors.IsNotFound(err) {
-	//		// not found
-	//		// 1.1 ca secret not exist
-	//		var cert, key []byte
-	//		if !cc.Exist() {
-	//			logger.Info(fmt.Sprintf("config dir %s/%s not found, we will init it", ".", chainConfig.Name))
-	//			// 1.1.1 dir not exist, we will create dir and create ca secret
-	//			err = cc.Init(chainConfig.Spec.Id)
-	//			if err != nil {
-	//				return ctrl.Result{}, err
-	//			}
-	//			cert, key, err = cc.CreateCaAndRead()
-	//			if err != nil {
-	//				return ctrl.Result{}, err
-	//			}
-	//		} else {
-	//			// 1.1.2 dir exist, we will create ca secret
-	//			// if any file not exist, will return error
-	//			cert, key, err = cc.CreateCaAndRead()
-	//		}
-	//		if err != nil {
-	//			return ctrl.Result{}, err
-	//		}
-	//		caSecret.ObjectMeta = metav1.ObjectMeta{
-	//			Name:      GetCaSecretName(chainConfig.Name),
-	//			Namespace: chainConfig.Namespace,
-	//			Labels:    LabelsForChain(chainConfig.Name),
-	//		}
-	//		caSecret.Data = map[string][]byte{
-	//			CaCert: cert,
-	//			CaKey:  key,
-	//		}
-	//		// set ownerReference
-	//		_ = ctrl.SetControllerReference(chainConfig, caSecret, r.Scheme)
-	//		// create chain secret
-	//		err = r.Create(ctx, caSecret)
-	//		if err != nil {
-	//			return ctrl.Result{}, err
-	//		}
-	//		logger.Info(fmt.Sprintf("chain config ca secret %s/%s created", chainConfig.Namespace, chainConfig.Name))
-	//		// requeue
-	//		//return ctrl.Result{Requeue: true}, nil
-	//	} else if err != nil {
-	//		logger.Error(err, "failed to get chain ca secret")
-	//		return ctrl.Result{}, err
-	//	}
-	//}
 	if chainConfig.Spec.Action != chainConfig.Status.Status {
 		chainConfig.Status.Status = chainConfig.Spec.Action
 		err := r.Status().Update(ctx, chainConfig)
@@ -189,65 +129,39 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			logger.Info("update chain config status successful")
 			return ctrl.Result{}, nil
 		}
+		return ctrl.Result{}, nil
 	}
 
-	//var updateStatusFlag bool
-	//// list all chain's node
-	//chainNodeList := &citacloudv1.ChainNodeList{}
-	//opts := []client.ListOption{
-	//	client.InNamespace(chainConfig.Namespace),
-	//	client.MatchingFields{"spec.chainName": chainConfig.Name},
-	//}
-	//if err := r.List(ctx, chainNodeList, opts...); err != nil {
-	//	return ctrl.Result{}, err
-	//}
-	//
-	//// set validators
-	//if updateValidators(chainConfig, chainNodeList.Items) {
-	//	if err := r.Update(ctx, chainConfig); err != nil {
-	//		logger.Error(err, "update chain config validator error")
-	//		return ctrl.Result{}, err
-	//	}
-	//	logger.Info("set chain config validator success")
-	//	return ctrl.Result{RequeueAfter: time.Duration(3) * time.Second}, nil
-	//}
-	//
-	//nodeInfoMap := make(map[string]citacloudv1.NodeInfo, 0)
-	//for _, nl := range chainNodeList.Items {
-	//	// set node status
-	//	nl.Spec.NodeInfo.Status = nl.Status.Status
-	//	nodeInfoMap[nl.Name] = nl.Spec.NodeInfo
-	//}
-	//if !reflect.DeepEqual(chainConfig.Status.NodeInfoMap, nodeInfoMap) {
-	//	chainConfig.Status.NodeInfoMap = nodeInfoMap
-	//	updateStatusFlag = true
-	//}
-	//if updateStatusFlag {
-	//	err := r.Status().Update(ctx, chainConfig)
-	//	if err != nil {
-	//		logger.Error(err, "failed to update chain config status")
-	//		return ctrl.Result{}, err
-	//	}
-	//	logger.Info("update chain config status successful")
-	//}
-
+	var updateStatusFlag bool
+	// list all chain's node
+	chainNodeList := &citacloudv1.ChainNodeList{}
+	opts := []client.ListOption{
+		client.InNamespace(chainConfig.Namespace),
+		client.MatchingFields{"spec.chainName": chainConfig.Name},
+	}
+	if err := r.List(ctx, chainNodeList, opts...); err != nil {
+		return ctrl.Result{}, err
+	}
+	nodeInfoMap := make(map[string]citacloudv1.NodeInfo, 0)
+	for _, nl := range chainNodeList.Items {
+		// set node status
+		nl.Spec.NodeInfo.Status = nl.Status.Status
+		nodeInfoMap[nl.Name] = nl.Spec.NodeInfo
+	}
+	if !reflect.DeepEqual(chainConfig.Status.NodeInfoMap, nodeInfoMap) {
+		chainConfig.Status.NodeInfoMap = nodeInfoMap
+		updateStatusFlag = true
+	}
+	if updateStatusFlag {
+		err := r.Status().Update(ctx, chainConfig)
+		if err != nil {
+			logger.Error(err, "failed to update chain config status")
+			return ctrl.Result{}, err
+		}
+		logger.Info("update chain config status successful")
+	}
 	return ctrl.Result{}, nil
 }
-
-//func updateValidators(config *citacloudv1.ChainConfig, chainNodes []citacloudv1.ChainNode) bool {
-//	var updateFlag bool
-//	if len(config.Spec.Validators) != len(chainNodes) {
-//		tmp := make([]string, 0)
-//		for _, node := range chainNodes {
-//			if node.Spec.Type == citacloudv1.Consensus {
-//				tmp = append(tmp, node.Spec.Address)
-//			}
-//		}
-//		config.Spec.Validators = tmp
-//		updateFlag = true
-//	}
-//	return updateFlag
-//}
 
 func (r *ChainConfigReconciler) SetDefaultStatus(ctx context.Context, chainConfig *citacloudv1.ChainConfig) (bool, error) {
 	logger := log.FromContext(ctx)
@@ -255,10 +169,10 @@ func (r *ChainConfigReconciler) SetDefaultStatus(ctx context.Context, chainConfi
 		chainConfig.Status.Status = citacloudv1.Publicizing
 		err := r.Client.Status().Update(ctx, chainConfig)
 		if err != nil {
-			logger.Error(err, "set chain config default status failed")
+			logger.Error(err, fmt.Sprintf("set chain config default status [%s] failed", chainConfig.Status.Status))
 			return false, err
 		}
-		logger.Info("set chain config default status success")
+		logger.Info(fmt.Sprintf("set chain config default status [%s] success", chainConfig.Status.Status))
 		return true, nil
 	}
 	return false, nil
@@ -270,10 +184,10 @@ func (r *ChainConfigReconciler) SetDefaultSpec(ctx context.Context, chainConfig 
 		chainConfig.Spec.Action = citacloudv1.Publicizing
 		err := r.Client.Update(ctx, chainConfig)
 		if err != nil {
-			logger.Error(err, "set chain config default action value failed")
+			logger.Error(err, fmt.Sprintf("set chain config default action value [%s] failed", chainConfig.Spec.Action))
 			return false, err
 		}
-		logger.Info("set chain config default action value success")
+		logger.Info(fmt.Sprintf("set chain config default action value [%s] success", chainConfig.Spec.Action))
 		return true, nil
 	}
 	return false, nil

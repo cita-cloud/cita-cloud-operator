@@ -28,15 +28,6 @@ type ChainConfigSpec struct {
 	// chain id
 	Id string `json:"id"`
 
-	// admin账户的地址
-	//AdminAddress string `json:"adminAddress,omitempty"`
-
-	// Initial number of validators
-	//ValidatorCount int `json:"validatorCount"`
-
-	// 共识节点的地址列表
-	//Validators []string `json:"validators,omitempty"`
-
 	// 创世块的时间戳
 	Timestamp int64 `json:"timestamp"`
 
@@ -55,11 +46,6 @@ type ChainConfigSpec struct {
 	// 共识算法
 	ConsensusType ConsensusType `json:"consensusType"`
 
-	// admin用户的kms password
-	//KmsPassword string `json:"kmsPassword,omitempty"`
-
-	// 版本号
-	//Version string `json:"version"`
 	// 期望的状态
 	Action ChainStatus `json:"action,omitempty"`
 }

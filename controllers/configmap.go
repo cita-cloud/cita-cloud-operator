@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	citacloudv1 "github.com/cita-cloud/cita-cloud-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -53,6 +54,14 @@ func (r *ChainNodeReconciler) updateNodeConfigMap(ctx context.Context, chainConf
 		return err
 	}
 	var cnService *ChainNodeService
+
+	// find account
+	account:= &citacloudv1.Account{}
+	if err := r.Get(ctx, types.NamespacedName{Name: chainNode.Spec.Account, Namespace: chainNode.Namespace}, account); err != nil {
+		logger.Error(err, fmt.Sprintf("get account [%s] failed", chainNode.Spec.Account))
+		return err
+	}
+
 	if chainConfig.Spec.EnableTLS {
 		// todo: reflect
 		// get chain ca secret
@@ -63,14 +72,14 @@ func (r *ChainNodeReconciler) updateNodeConfigMap(ctx context.Context, chainConf
 		}
 		// get node secret
 		nodeCertAndKeySecret := &corev1.Secret{}
-		if err := r.Get(ctx, types.NamespacedName{Name: GetNodeCertAndKeySecretName(chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, nodeCertAndKeySecret); err != nil {
+		if err := r.Get(ctx, types.NamespacedName{Name: GetAccountCertAndKeySecretName(chainConfig.Name, chainNode.Spec.Account), Namespace: chainNode.Namespace}, nodeCertAndKeySecret); err != nil {
 			logger.Error(err, "get node secret error")
 			return err
 		}
 
-		cnService = NewChainNodeServiceForTls(chainConfig, chainNode, caSecret, nodeCertAndKeySecret)
+		cnService = NewChainNodeServiceForTls(chainConfig, chainNode, account, caSecret, nodeCertAndKeySecret)
 	} else {
-		cnService = NewChainNodeService(chainConfig, chainNode)
+		cnService = NewChainNodeServiceForP2P(chainConfig, chainNode, account)
 	}
 
 	configMap.Data = map[string]string{
@@ -120,7 +129,7 @@ func (r *ChainNodeReconciler) updateLogConfigMap(ctx context.Context, chainConfi
 		return err
 	}
 
-	cnService := NewChainNodeService(chainConfig, chainNode)
+	cnService := NewChainNodeServiceForLog(chainConfig, chainNode)
 
 	configMap.Data = map[string]string{
 		ControllerLogConfigFile: cnService.GenerateControllerLogConfig(),

@@ -10,16 +10,21 @@ import (
 type ChainNodeService struct {
 	ChainConfig          *citacloudv1.ChainConfig
 	ChainNode            *citacloudv1.ChainNode
+	Account              *citacloudv1.Account
 	CaSecret             *corev1.Secret
 	NodeCertAndKeySecret *corev1.Secret
 }
 
-func NewChainNodeService(chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) *ChainNodeService {
+func NewChainNodeServiceForLog(chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) *ChainNodeService {
 	return &ChainNodeService{ChainConfig: chainConfig, ChainNode: chainNode}
 }
 
-func NewChainNodeServiceForTls(chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, caSecret, nodeCertAndKeySecret *corev1.Secret) *ChainNodeService {
-	return &ChainNodeService{ChainConfig: chainConfig, ChainNode: chainNode, CaSecret: caSecret, NodeCertAndKeySecret: nodeCertAndKeySecret}
+func NewChainNodeServiceForP2P(chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, account *citacloudv1.Account) *ChainNodeService {
+	return &ChainNodeService{ChainConfig: chainConfig, ChainNode: chainNode, Account: account}
+}
+
+func NewChainNodeServiceForTls(chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, account *citacloudv1.Account, caSecret, nodeCertAndKeySecret *corev1.Secret) *ChainNodeService {
+	return &ChainNodeService{ChainConfig: chainConfig, ChainNode: chainNode, Account: account, CaSecret: caSecret, NodeCertAndKeySecret: nodeCertAndKeySecret}
 }
 
 type ChainNodeServiceImpl interface {
@@ -222,8 +227,8 @@ port = 40000
 
 	nodeList := cns.ChainConfig.Status.NodeInfoMap
 	for key, node := range nodeList {
-		if node.Address == cns.ChainNode.Spec.Address {
-			// ignore own
+		if key == cns.ChainNode.Name {
+			// ignore with match name
 			continue
 		}
 		if node.Cluster == cns.ChainNode.Spec.Cluster {
@@ -261,8 +266,8 @@ reconnect_timeout = 5
 
 	nodeList := cns.ChainConfig.Status.NodeInfoMap
 	for key, node := range nodeList {
-		if node.Address == cns.ChainNode.Spec.Address {
-			// ignore own
+		if key == cns.ChainNode.Name {
+			// ignore with match name
 			continue
 		}
 		if node.Cluster == cns.ChainNode.Spec.Cluster {
@@ -292,7 +297,7 @@ grpc_listen_port = 50001
 network_port = 50000
 node_addr = '%s'
 
-`, cns.ChainNode.Spec.Address)
+`, cns.Account.Status.Address)
 	return consensusStr
 }
 
@@ -312,32 +317,28 @@ storage_port = 50003
 }
 
 func (cns *ChainNodeService) generateBasic() string {
-	return ""
-}
+	basicStr := fmt.Sprintf(`[genesis_block]
+prevhash = '%s'
+timestamp = %d
 
-//func (cns *ChainNodeService) generateBasic() string {
-//	basicStr := fmt.Sprintf(`[genesis_block]
-//prevhash = '%s'
-//timestamp = %d
-//
-//[system_config]
-//admin = '%s'
-//block_interval = %d
-//block_limit = %d
-//chain_id = '%s'
-//version = 0
-//validators = [
-//`, cns.ChainConfig.Spec.PrevHash, cns.ChainConfig.Spec.Timestamp, cns.ChainConfig.Status.AdminAccount.Address,
-//		cns.ChainConfig.Spec.BlockInterval, cns.ChainConfig.Spec.BlockLimit, cns.ChainConfig.Spec.Id)
-//	for _, validator := range cns.ChainConfig.Spec.Validators {
-//		s := fmt.Sprintf(`    '%s',
-//`, validator)
-//		basicStr = basicStr + s
-//	}
-//	return basicStr + `]
-//
-//`
-//}
+[system_config]
+admin = '%s'
+block_interval = %d
+block_limit = %d
+chain_id = '%s'
+version = 0
+validators = [
+`, cns.ChainConfig.Spec.PrevHash, cns.ChainConfig.Spec.Timestamp, cns.ChainConfig.Status.AdminAccount.Address,
+		cns.ChainConfig.Spec.BlockInterval, cns.ChainConfig.Spec.BlockLimit, cns.ChainConfig.Spec.Id)
+	for _, validator := range cns.ChainConfig.Status.ValidatorAccountMap {
+		s := fmt.Sprintf(`    '%s',
+`, validator.Address)
+		basicStr = basicStr + s
+	}
+	return basicStr + `]
+
+`
+}
 
 func (cns *ChainNodeService) generateController() string {
 	return fmt.Sprintf(`[controller]
@@ -351,12 +352,12 @@ node_address = '%s'
 package_limit = 30000
 storage_port = 50003
 
-`, cns.ChainNode.Spec.Address)
+`, cns.Account.Status.Address)
 }
 
 func (cns *ChainNodeService) generateKms() string {
 	return fmt.Sprintf(`[kms_sm]
 db_key = '%s'
 kms_port = 50005
-`, cns.ChainNode.Spec.KmsPassword)
+`, cns.Account.Spec.KmsPassword)
 }

@@ -167,7 +167,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				return ctrl.Result{}, err
 			}
 			accountCertAndKeySecret.ObjectMeta = metav1.ObjectMeta{
-				Name:      GetNodeCertAndKeySecretName(chainConfig.Name, account.Name),
+				Name:      GetAccountCertAndKeySecretName(chainConfig.Name, account.Name),
 				Namespace: account.Namespace,
 				Labels:    LabelsForChain(chainConfig.Name),
 			}

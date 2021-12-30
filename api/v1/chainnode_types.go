@@ -32,9 +32,6 @@ type ChainNodeSpec struct {
 	// 对应的链级配置名称
 	ChainName string `json:"chainName,omitempty"`
 
-	// 节点用户的kms password
-	KmsPassword string `json:"kmsPassword,omitempty"`
-
 	// 日志等级
 	LogLevel LogLevel `json:"logLevel,omitempty"`
 
@@ -47,9 +44,6 @@ type ChainNodeSpec struct {
 	// 期望的状态
 	Action NodeAction `json:"action"`
 
-	// 节点类型
-	Type NodeType `json:"type"`
-
 	// ImageInfo
 	ImageInfo `json:"imageInfo,omitempty"`
 }
@@ -59,13 +53,6 @@ type LogLevel string
 const (
 	Info LogLevel = "info"
 	Warn LogLevel = "warn"
-)
-
-type NodeType string
-
-const (
-	Consensus NodeType = "Consensus"
-	//Ordinary  NodeType = "Ordinary"
 )
 
 type NodeAction string

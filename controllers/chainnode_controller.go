@@ -26,8 +26,6 @@ import (
 	cmd "github.com/cita-cloud/cita-cloud-operator/pkg/exec"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -109,15 +107,6 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *ChainNodeReconciler) SetDefaultSpec(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
 	logger := log.FromContext(ctx)
 
-	// set cloud config init
-	r.cmd = cmd.NewCloudConfig(chainConfig.Name, ".")
-	if !r.cmd.Exist() {
-		err := r.cmd.Init(chainConfig.Spec.Id)
-		if err != nil {
-			return err
-		}
-	}
-
 	if chainNode.Spec.PullPolicy == "" {
 		chainNode.Spec.PullPolicy = corev1.PullIfNotPresent
 	}
@@ -152,78 +141,17 @@ func (r *ChainNodeReconciler) SetDefaultSpec(ctx context.Context, chainConfig *c
 		chainNode.Spec.KmsImage = "citacloud/kms_sm:v6.3.0"
 	}
 
-	//if chainNode.Spec.Address == "" {
-	//	// init chain and init chain config
-	//	cc := cmd.NewCloudConfig(chainConfig.Name, ".")
-	//	if !cc.Exist() {
-	//		err := cc.Init(chainConfig.Spec.Id)
-	//		if err != nil {
-	//			return err
-	//		}
-	//	}
-	//
-	//	// check node account
-	//	accountConfigMap := &corev1.ConfigMap{}
-	//	err := r.Get(ctx, types.NamespacedName{Name: GetNodeAccountName(chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, accountConfigMap)
-	//	if err != nil && errors.IsNotFound(err) {
-	//
-	//		keyId, nodeAddress, err := cc.CreateAccount(chainNode.Spec.KmsPassword)
-	//		if err != nil {
-	//			return err
-	//		}
-	//		accountConfigMap.ObjectMeta = metav1.ObjectMeta{
-	//			Name:      GetNodeAccountName(chainConfig.Name, chainNode.Name),
-	//			Namespace: chainNode.Namespace,
-	//			Labels:    LabelsForChain(chainNode.Name),
-	//		}
-	//		accountConfigMap.Data = map[string]string{
-	//			"keyId":   keyId,
-	//			"address": nodeAddress,
-	//		}
-	//		kmsDb, err := cc.ReadKmsDb(nodeAddress)
-	//		if err != nil {
-	//			return err
-	//		}
-	//		accountConfigMap.BinaryData = map[string][]byte{
-	//			"kms.db": kmsDb,
-	//		}
-	//
-	//		// set ownerReference
-	//		_ = ctrl.SetControllerReference(chainNode, accountConfigMap, r.Scheme)
-	//		// create chain secret
-	//		err = r.Create(ctx, accountConfigMap)
-	//		if err != nil {
-	//			return err
-	//		}
-	//		chainNode.Spec.Address = nodeAddress
-	//		// requeue
-	//		//return ctrl.Result{Requeue: true}, nil
-	//
-	//	} else if err != nil {
-	//		logger.Error(err, "failed to get node address configmap")
-	//		return err
-	//	} else {
-	//		chainNode.Spec.Address = accountConfigMap.Data["address"]
-	//	}
-	//}
-
-	if chainNode.Spec.Address == "" {
-		// ensure node account
-		nodeAddress, err := r.ensureNodeAccount(ctx, chainConfig, chainNode)
-		if err != nil {
+	// set domain
+	if chainNode.Spec.Domain == "" {
+		account := &citacloudv1.Account{}
+		if err := r.Get(ctx, types.NamespacedName{Name: chainNode.Spec.Account, Namespace: chainNode.Namespace}, account); err != nil {
+			logger.Error(err, fmt.Sprintf("get account [%s] failed", chainNode.Spec.Account))
 			return err
 		}
-		// set chainNode.spec.address
-		chainNode.Spec.Address = nodeAddress
-	}
-
-	// ensure node secret
-	if err := r.ensureNodeCertAndKey(ctx, chainConfig, chainNode); err != nil {
-		return err
+		chainNode.Spec.Domain = account.Spec.Domain
 	}
 
 	// set ownerReference
-	// todo: 需要生成账号后再进行绑定？
 	if len(chainNode.OwnerReferences) == 0 {
 		if err := ctrl.SetControllerReference(chainConfig, chainNode, r.Scheme); err != nil {
 			logger.Error(err, "set chain node controller reference failed")
@@ -246,87 +174,6 @@ func (r *ChainNodeReconciler) SetDefaultStatus(ctx context.Context, chainNode *c
 		return true, nil
 	}
 	return false, nil
-}
-
-func (r *ChainNodeReconciler) ensureNodeCertAndKey(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
-	logger := log.FromContext(ctx)
-
-	nodeCertAndKeySecret := &corev1.Secret{}
-	err := r.Get(ctx, types.NamespacedName{Name: GetNodeCertAndKeySecretName(chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, nodeCertAndKeySecret)
-	if err != nil && errors.IsNotFound(err) {
-		csr, key, cert, err := r.cmd.CreateSignCsrAndRead(chainNode.Spec.Domain)
-		if err != nil {
-			return nil
-		}
-		nodeCertAndKeySecret.ObjectMeta = metav1.ObjectMeta{
-			Name:      GetNodeCertAndKeySecretName(chainConfig.Name, chainNode.Name),
-			Namespace: chainNode.Namespace,
-			Labels:    LabelsForNode(chainConfig.Name, chainNode.Name),
-		}
-		nodeCertAndKeySecret.Data = map[string][]byte{
-			NodeCert: cert,
-			NodeCsr:  csr,
-			NodeKey:  key,
-		}
-		// set ownerReference
-		_ = ctrl.SetControllerReference(chainNode, nodeCertAndKeySecret, r.Scheme)
-		// create chain secret
-		err = r.Create(ctx, nodeCertAndKeySecret)
-		if err != nil {
-			return err
-		}
-		logger.Info(fmt.Sprintf("chain node cert-key secret %s/%s created", chainNode.Namespace, chainNode.Name))
-		return nil
-	} else if err != nil {
-		logger.Error(err, "failed to get node secret")
-		return err
-	}
-	return nil
-}
-
-func (r *ChainNodeReconciler) ensureNodeAccount(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (string, error) {
-	logger := log.FromContext(ctx)
-
-	accountConfigMap := &corev1.ConfigMap{}
-	err := r.Get(ctx, types.NamespacedName{Name: GetNodeAccountName(chainConfig.Name, chainNode.Name), Namespace: chainNode.Namespace}, accountConfigMap)
-	if err != nil && errors.IsNotFound(err) {
-
-		keyId, nodeAddress, err := r.cmd.CreateAccount(chainNode.Spec.KmsPassword)
-		if err != nil {
-			return "", err
-		}
-		accountConfigMap.ObjectMeta = metav1.ObjectMeta{
-			Name:      GetNodeAccountName(chainConfig.Name, chainNode.Name),
-			Namespace: chainNode.Namespace,
-			Labels:    LabelsForChain(chainNode.Name),
-		}
-		accountConfigMap.Data = map[string]string{
-			"keyId":   keyId,
-			"address": nodeAddress,
-		}
-		kmsDb, err := r.cmd.ReadKmsDb(nodeAddress)
-		if err != nil {
-			return "", err
-		}
-		accountConfigMap.BinaryData = map[string][]byte{
-			"kms.db": kmsDb,
-		}
-
-		// set ownerReference
-		_ = ctrl.SetControllerReference(chainNode, accountConfigMap, r.Scheme)
-		// create chain secret
-		err = r.Create(ctx, accountConfigMap)
-		if err != nil {
-			return "", err
-		}
-		return nodeAddress, nil
-
-	} else if err != nil {
-		logger.Error(err, "failed to get node address configmap")
-		return "", err
-	} else {
-		return accountConfigMap.Data["address"], nil
-	}
 }
 
 func (r *ChainNodeReconciler) ReconcileAllRecourse(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
@@ -358,7 +205,6 @@ func (r *ChainNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&citacloudv1.ChainNode{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(r.statefulSetPredicates())).
-		//Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.ConfigMap{}).
 		Complete(r)
 }

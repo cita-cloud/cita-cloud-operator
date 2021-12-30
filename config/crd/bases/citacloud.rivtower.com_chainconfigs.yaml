@@ -88,8 +88,8 @@ spec:
               nodeInfoMap:
                 additionalProperties:
                   properties:
-                    address:
-                      description: 节点地址
+                    account:
+                      description: 账号，不为空
                       type: string
                     cluster:
                       description: 所属的k8s集群
@@ -107,6 +107,8 @@ spec:
                     status:
                       description: node status
                       type: string
+                  required:
+                  - account
                   type: object
                 description: 链下节点信息
                 type: object

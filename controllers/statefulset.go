@@ -398,7 +398,7 @@ func GetVolumes(chainNode *citacloudv1.ChainNode) []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: GetNodeAccountName(chainNode.Spec.ChainName, chainNode.Name),
+						Name: GetAccountConfigmap(chainNode.Spec.ChainName, chainNode.Spec.Account),
 					},
 				},
 			},
