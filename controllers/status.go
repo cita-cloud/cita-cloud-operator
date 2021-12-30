@@ -77,10 +77,10 @@ func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainNode *
 		logger.Info(fmt.Sprintf("updating chain node status from [%s] to [%s]...", oldStatus.Status, currentStatus.Status))
 		err = r.Status().Update(ctx, chainNode)
 		if err != nil {
-			logger.Error(err, "update chain node status error")
+			logger.Error(err, fmt.Sprintf("update chain node status [%s] failed", currentStatus.Status))
 			return err
 		}
-		logger.Info("update chain node status success")
+		logger.Info(fmt.Sprintf("update chain node status [%s] success", currentStatus.Status))
 		return nil
 	}
 	logger.Info("chain node status has not changed")
@@ -113,10 +113,10 @@ func (r *ChainNodeReconciler) SyncStopStatus(ctx context.Context, chainNode *cit
 		logger.Info(fmt.Sprintf("updating chain node status from [%s] to [%s]...", oldStatus.Status, currentStatus.Status))
 		err = r.Status().Update(ctx, chainNode)
 		if err != nil {
-			logger.Error(err, "update chain node status error")
+			logger.Error(err, fmt.Sprintf("update chain node status [%s] failed", currentStatus.Status))
 			return err
 		}
-		logger.Info("update chain node status success")
+		logger.Info(fmt.Sprintf("update chain node status [%s] success", currentStatus.Status))
 		return nil
 	}
 	logger.Info("chain node status has not changed")
