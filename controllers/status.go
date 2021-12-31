@@ -98,9 +98,7 @@ func (r *ChainNodeReconciler) SyncStopStatus(ctx context.Context, chainNode *cit
 		return err
 	}
 	if chainNode.Status.Status != citacloudv1.NodeStopped {
-		//if sts.Status.CurrentReplicas == 1 {
-			chainNode.Status.Status = citacloudv1.NodeStopping
-		//}
+		chainNode.Status.Status = citacloudv1.NodeStopping
 	}
 	if chainNode.Status.Status == citacloudv1.NodeStopping {
 		if sts.Status.CurrentReplicas == 0 && sts.Status.Replicas == 0 {

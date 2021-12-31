@@ -59,7 +59,6 @@ type NodeAction string
 
 const (
 	NodeInitialize NodeAction = "Initialize"
-	//NodeCreate     NodeAction = "Create"
 	NodeStop       NodeAction = "Stop"
 	NodeStart      NodeAction = "Start"
 )
@@ -67,13 +66,13 @@ const (
 type NodeStatus string
 
 const (
-	NodeInitialized NodeStatus = "Initialized"
-	//NodeCreating    NodeStatus = "Creating"
-	NodeStarting    NodeStatus = "Starting"
-	NodeRunning     NodeStatus = "Running"
-	NodeWarning     NodeStatus = "Warning"
-	NodeError       NodeStatus = "Error"
-	NodeUpdating    NodeStatus = "Updating"
+	NodeWaitChainOnline NodeStatus = "WaitChainOnline"
+	NodeInitialized     NodeStatus = "Initialized"
+	NodeStarting        NodeStatus = "Starting"
+	NodeRunning         NodeStatus = "Running"
+	NodeWarning         NodeStatus = "Warning"
+	NodeError           NodeStatus = "Error"
+	NodeUpdating        NodeStatus = "Updating"
 	// if chainnode's config modified, chainnode should restart
 	NodeNeedRestart NodeStatus = "NeedRestart"
 	NodeStopping    NodeStatus = "Stopping"

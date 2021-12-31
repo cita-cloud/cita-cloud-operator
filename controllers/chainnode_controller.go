@@ -66,6 +66,21 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if chainConfig.Status.Status != citacloudv1.Online {
+		// if chain is not online
+		logger.Info(fmt.Sprintf("the chain [%s] is not online", chainConfig.Name))
+		oldChainNode := chainNode.DeepCopy()
+		chainNode.Status.Status = citacloudv1.NodeWaitChainOnline
+		if !IsEqual(oldChainNode.Status, chainNode.Status) {
+			if err := r.Client.Status().Update(ctx, chainNode); err != nil {
+				return ctrl.Result{}, err
+			}
+			logger.Info(fmt.Sprintf("update chain node status [%s] success", citacloudv1.NodeWaitChainOnline))
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, nil
+	}
+
 	if chainNode.Spec.Action == citacloudv1.NodeInitialize {
 		oldChainNode := chainNode.DeepCopy()
 		if err := r.SetDefaultSpec(ctx, chainConfig, chainNode); err != nil {
@@ -206,6 +221,19 @@ func (r *ChainNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&citacloudv1.ChainNode{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(r.statefulSetPredicates())).
 		Owns(&corev1.ConfigMap{}).
+		//Watches(
+		//	&source.Kind{Type: &citacloudv1.ChainConfig{}},
+		//	//&handler.EnqueueRequestForOwner{OwnerType: &citacloudv1.ChainNode{}, IsController: false},
+		//	handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+		//		// 筛选出下面所有的node节点，并进行入队
+		//		return []reconcile.Request{
+		//			{NamespacedName: types.NamespacedName{
+		//				Name:      a.GetName() + "-1",
+		//				Namespace: a.GetNamespace(),
+		//			}},
+		//		}
+		//	}),
+		//).
 		Complete(r)
 }
 
