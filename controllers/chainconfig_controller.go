@@ -101,17 +101,17 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		// 查询共识账户
-		OrdinaryAccountList := &citacloudv1.AccountList{}
-		OrdinaryAccountOpts := []client.ListOption{
+		ConsensusAccountList := &citacloudv1.AccountList{}
+		ConsensusAccountOpts := []client.ListOption{
 			client.InNamespace(chainConfig.Namespace),
 			client.MatchingFields{"spec.chain": chainConfig.Name},
-			client.MatchingFields{"spec.role": string(citacloudv1.Ordinary)},
+			client.MatchingFields{"spec.role": string(citacloudv1.Consensus)},
 		}
-		if err := r.List(ctx, OrdinaryAccountList, OrdinaryAccountOpts...); err != nil {
+		if err := r.List(ctx, ConsensusAccountList, ConsensusAccountOpts...); err != nil {
 			return ctrl.Result{}, err
 		}
 		vaiMap := make(map[string]citacloudv1.ValidatorAccountInfo, 0)
-		for _, acc := range OrdinaryAccountList.Items {
+		for _, acc := range ConsensusAccountList.Items {
 			vai := citacloudv1.ValidatorAccountInfo{Address: acc.Status.Address}
 			vaiMap[acc.Name] = vai
 		}
