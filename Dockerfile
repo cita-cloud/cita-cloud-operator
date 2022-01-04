@@ -36,7 +36,7 @@ RUN /bin/sh -c set -eux;\
     apt-get install -y --no-install-recommends libsqlite3-0;\
     rm -rf /var/lib/apt/lists/*;
 COPY --from=builder /workspace/src/github.com/cita-cloud/cita-cloud-operator .
-USER 65532:65532
+#USER 65532:65532
 ENTRYPOINT ["/cita-cloud-operator"]
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details

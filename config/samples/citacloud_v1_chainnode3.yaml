@@ -1,13 +1,13 @@
 apiVersion: citacloud.rivtower.com/v1
 kind: ChainNode
 metadata:
-  name: my-node-1
+  name: my-node-3
   namespace: cita
 spec:
   nodeInfo:
     cluster: k8s-1
-    account: node1-account
-    externalIp: "1.1.1.1"
+    account: node3-account
+    externalIp: "2.2.2.2"
     port: 9630
   chainName: my-chainconfig
   storageSize: 21474836480
