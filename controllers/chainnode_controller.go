@@ -23,7 +23,6 @@ import (
 	"time"
 
 	citacloudv1 "github.com/cita-cloud/cita-cloud-operator/api/v1"
-	cmd "github.com/cita-cloud/cita-cloud-operator/pkg/exec"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,7 +45,6 @@ type ChainNodeReconciler struct {
 	updateConfigFlag      bool
 	updateStatefulSetFlag bool
 	startUpdateTime       time.Time
-	cmd                   cmd.Cmd
 }
 
 //+kubebuilder:rbac:groups=citacloud.rivtower.com,resources=chainnodes,verbs=get;list;watch;create;update;patch;delete
