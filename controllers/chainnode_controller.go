@@ -89,7 +89,7 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		if !IsEqual(oldChainNode.Spec, chainNode.Spec) {
 			diff, _ := DiffObject(oldChainNode, chainNode)
-			logger.Info("SetDefault: " + string(diff))
+			logger.Info("ChainNode setDefault: " + string(diff))
 			return ctrl.Result{}, r.Update(ctx, chainNode)
 		}
 
@@ -103,7 +103,7 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, err
 		}
 		// sync status
-		if err := r.SyncRunningStatus(ctx, chainNode); err != nil {
+		if err := r.SyncRunningStatus(ctx, chainConfig, chainNode); err != nil {
 			return ctrl.Result{}, err
 		}
 	} else if chainNode.Spec.Action == citacloudv1.NodeStop {
@@ -123,38 +123,8 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *ChainNodeReconciler) SetDefaultSpec(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
 	logger := log.FromContext(ctx)
 
-	if chainNode.Spec.PullPolicy == "" {
-		chainNode.Spec.PullPolicy = corev1.PullIfNotPresent
-	}
-
-	// set default images
-	if chainNode.Spec.NetworkImage == "" {
-		if chainConfig.Spec.EnableTLS {
-			chainNode.Spec.NetworkImage = "citacloud/network_tls:v6.3.0"
-		} else {
-			chainNode.Spec.NetworkImage = "citacloud/network_p2p:v6.3.0"
-		}
-	}
-	if chainNode.Spec.ConsensusImage == "" {
-		if chainConfig.Spec.ConsensusType == citacloudv1.Raft {
-			chainNode.Spec.ConsensusImage = "citacloud/consensus_raft:v6.3.0"
-		} else if chainConfig.Spec.ConsensusType == citacloudv1.BFT {
-			chainNode.Spec.ConsensusImage = "citacloud/consensus_bft:v6.3.0"
-		} else {
-			return fmt.Errorf("mismatched consensus type")
-		}
-	}
-	if chainNode.Spec.ExecutorImage == "" {
-		chainNode.Spec.ExecutorImage = "citacloud/executor_evm:v6.3.0"
-	}
-	if chainNode.Spec.StorageImage == "" {
-		chainNode.Spec.StorageImage = "citacloud/storage_rocksdb:v6.3.0"
-	}
-	if chainNode.Spec.ControllerImage == "" {
-		chainNode.Spec.ControllerImage = "citacloud/controller:v6.3.0"
-	}
-	if chainNode.Spec.KmsImage == "" {
-		chainNode.Spec.KmsImage = "citacloud/kms_sm:v6.3.0"
+	if chainNode.Spec.ImageInfo == (citacloudv1.ImageInfo{}) {
+		chainNode.Spec.ImageInfo = chainConfig.Spec.ImageInfo
 	}
 
 	// set domain

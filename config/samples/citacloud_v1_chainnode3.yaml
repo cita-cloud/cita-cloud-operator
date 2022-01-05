@@ -15,5 +15,3 @@ spec:
 #  action: "Initialize"
   action: "Start"
   logLevel: info
-  imageInfo:
-    pullPolicy: Always

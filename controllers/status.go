@@ -16,7 +16,7 @@ import (
 
 // SyncStatus
 // 如果status == Initialized，则判断当前pod的ready
-func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainNode *citacloudv1.ChainNode) error {
+func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
 	logger := log.FromContext(ctx)
 	//var updateFlag bool
 	oldStatus := chainNode.Status.DeepCopy()
@@ -43,6 +43,9 @@ func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainNode *
 	} else if chainNode.Status.Status == citacloudv1.NodeRunning {
 		if !pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) {
 			chainNode.Status.Status = citacloudv1.NodeError
+		} else if !reflect.DeepEqual(chainConfig.Spec.ImageInfo, chainNode.Spec.ImageInfo) {
+			// imageInfo is inconsistent
+			chainNode.Status.Status = citacloudv1.NodeWarning
 		}
 	} else if chainNode.Status.Status == citacloudv1.NodeError {
 		if pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) {
