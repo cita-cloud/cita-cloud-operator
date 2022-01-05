@@ -56,7 +56,7 @@ func (r *ChainNodeReconciler) updateNodeConfigMap(ctx context.Context, chainConf
 	var cnService *ChainNodeService
 
 	// find account
-	account:= &citacloudv1.Account{}
+	account := &citacloudv1.Account{}
 	if err := r.Get(ctx, types.NamespacedName{Name: chainNode.Spec.Account, Namespace: chainNode.Namespace}, account); err != nil {
 		logger.Error(err, fmt.Sprintf("get account [%s] failed", chainNode.Spec.Account))
 		return err

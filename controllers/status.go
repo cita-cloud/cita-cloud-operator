@@ -16,7 +16,7 @@ import (
 
 // SyncStatus
 // 如果status == Initialized，则判断当前pod的ready
-func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainNode *citacloudv1.ChainNode) error {
+func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
 	logger := log.FromContext(ctx)
 	//var updateFlag bool
 	oldStatus := chainNode.Status.DeepCopy()
@@ -43,6 +43,9 @@ func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainNode *
 	} else if chainNode.Status.Status == citacloudv1.NodeRunning {
 		if !pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) {
 			chainNode.Status.Status = citacloudv1.NodeError
+		} else if !reflect.DeepEqual(chainConfig.Spec.ImageInfo, chainNode.Spec.ImageInfo) {
+			// imageInfo is inconsistent
+			chainNode.Status.Status = citacloudv1.NodeWarning
 		}
 	} else if chainNode.Status.Status == citacloudv1.NodeError {
 		if pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) {
@@ -77,10 +80,10 @@ func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainNode *
 		logger.Info(fmt.Sprintf("updating chain node status from [%s] to [%s]...", oldStatus.Status, currentStatus.Status))
 		err = r.Status().Update(ctx, chainNode)
 		if err != nil {
-			logger.Error(err, "update chain node status error")
+			logger.Error(err, fmt.Sprintf("update chain node status [%s] failed", currentStatus.Status))
 			return err
 		}
-		logger.Info("update chain node status success")
+		logger.Info(fmt.Sprintf("update chain node status [%s] success", currentStatus.Status))
 		return nil
 	}
 	logger.Info("chain node status has not changed")
@@ -98,9 +101,7 @@ func (r *ChainNodeReconciler) SyncStopStatus(ctx context.Context, chainNode *cit
 		return err
 	}
 	if chainNode.Status.Status != citacloudv1.NodeStopped {
-		//if sts.Status.CurrentReplicas == 1 {
-			chainNode.Status.Status = citacloudv1.NodeStopping
-		//}
+		chainNode.Status.Status = citacloudv1.NodeStopping
 	}
 	if chainNode.Status.Status == citacloudv1.NodeStopping {
 		if sts.Status.CurrentReplicas == 0 && sts.Status.Replicas == 0 {
@@ -113,10 +114,10 @@ func (r *ChainNodeReconciler) SyncStopStatus(ctx context.Context, chainNode *cit
 		logger.Info(fmt.Sprintf("updating chain node status from [%s] to [%s]...", oldStatus.Status, currentStatus.Status))
 		err = r.Status().Update(ctx, chainNode)
 		if err != nil {
-			logger.Error(err, "update chain node status error")
+			logger.Error(err, fmt.Sprintf("update chain node status [%s] failed", currentStatus.Status))
 			return err
 		}
-		logger.Info("update chain node status success")
+		logger.Info(fmt.Sprintf("update chain node status [%s] success", currentStatus.Status))
 		return nil
 	}
 	logger.Info("chain node status has not changed")

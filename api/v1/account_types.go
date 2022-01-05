@@ -23,8 +23,9 @@ import (
 type Role string
 
 const (
-	Admin    Role = "Admin"
-	Ordinary Role = "Ordinary"
+	Admin     Role = "Admin"
+	Consensus Role = "Consensus"
+	Ordinary  Role = "Ordinary"
 )
 
 // AccountSpec defines the desired state of Account
@@ -42,7 +43,7 @@ type AccountSpec struct {
 // AccountStatus defines the observed state of Account
 type AccountStatus struct {
 	// Currently only the admin user will set this value
-	Cert    string `json:"cert,omitempty"`
+	Cert string `json:"cert,omitempty"`
 	// Address
 	Address string `json:"address,omitempty"`
 }

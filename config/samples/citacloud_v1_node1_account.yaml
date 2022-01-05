@@ -5,7 +5,7 @@ metadata:
   namespace: cita
 spec:
   chain: my-chainconfig
-  role: Ordinary
+  role: Consensus
   kmsPassword: "123456"
   domain: www.node1.com
 

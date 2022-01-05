@@ -22,7 +22,7 @@ func TestChainNodeService_GenerateNodeConfigForP2P(t *testing.T) {
 				Name: "test-chain",
 			},
 			Spec: citacloudv1.ChainConfigSpec{
-				Id: "63586a3c0255f337c77a777ff54f0040b8c388da04f23ecee6bfd4953a6512b4",
+				Id:            "63586a3c0255f337c77a777ff54f0040b8c388da04f23ecee6bfd4953a6512b4",
 				Timestamp:     1639105556777,
 				PrevHash:      "0x0000000000000000000000000000000000000000000000000000000000000000",
 				BlockInterval: 3,
@@ -109,13 +109,15 @@ func TestChainNodeService_GenerateNodeConfigForP2P(t *testing.T) {
 	var tests []struct {
 		name   string
 		fields fields
-		want   string
+		want1  string
+		want2  string
 	}
 	tests = append(tests, struct {
 		name   string
 		fields fields
-		want   string
-	}{name: "my-test", fields: f, want: `[network_p2p]
+		want1  string
+		want2  string
+	}{name: "my-test", fields: f, want1: `[network_p2p]
 grpc_port = 50000
 port = 40000
 
@@ -164,16 +166,67 @@ storage_port = 50003
 [kms_sm]
 db_key = '123456'
 kms_port = 50005
+`, want2: `[network_p2p]
+grpc_port = 50000
+port = 40000
+
+[[network_p2p.peers]]
+address = '/dns4/test-chain-my-node-2-cluster-ip/tcp/40000'
+
+[consensus_raft]
+controller_port = 50004
+grpc_listen_port = 50001
+network_port = 50000
+node_addr = '211dd8d62d6abb236a8ca72dc75489dcc6a79ce2'
+
+[executor_evm]
+executor_port = 50002
+
+[storage_rocksdb]
+kms_port = 50005
+storage_port = 50003
+
+[genesis_block]
+prevhash = '0x0000000000000000000000000000000000000000000000000000000000000000'
+timestamp = 1639105556777
+
+[system_config]
+admin = 'a3203aa7717ba46457d3cb373b10382adc763d2d'
+block_interval = 3
+block_limit = 100
+chain_id = '63586a3c0255f337c77a777ff54f0040b8c388da04f23ecee6bfd4953a6512b4'
+version = 0
+validators = [
+    'c5b606cbd200b79f05a3ed4d92ce9581a0b8ec12',
+	'211dd8d62d6abb236a8ca72dc75489dcc6a79ce2',
+]
+
+[controller]
+consensus_port = 50001
+controller_port = 50004
+executor_port = 50002
+key_id = 1
+kms_port = 50005
+network_port = 50000
+node_address = '211dd8d62d6abb236a8ca72dc75489dcc6a79ce2'
+package_limit = 30000
+storage_port = 50003
+
+[kms_sm]
+db_key = '123456'
+kms_port = 50005
 `})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cns := &ChainNodeService{
 				ChainConfig: tt.fields.ChainConfig,
 				ChainNode:   tt.fields.ChainNode,
-				Account: tt.fields.Account,
+				Account:     tt.fields.Account,
 			}
-			if got := cns.GenerateNodeConfig(); got != tt.want {
-				t.Errorf("GenerateNodeConfig() = %v, \n\n\nwant %v", got, tt.want)
+			if got := cns.GenerateNodeConfig(); got == tt.want1 || got == tt.want2 {
+
+			} else {
+				t.Errorf("GenerateNodeConfig() = %v, \n\n\nwant1 %v, \n\n\nwant2 %v", got, tt.want1, tt.want2)
 			}
 		})
 	}
@@ -195,7 +248,7 @@ func TestChainNodeService_GenerateNodeConfigForTls(t *testing.T) {
 				Name: "test-chain",
 			},
 			Spec: citacloudv1.ChainConfigSpec{
-				Id: "63586a3c0255f337c77a777ff54f0040b8c388da04f23ecee6bfd4953a6512b4",
+				Id:            "63586a3c0255f337c77a777ff54f0040b8c388da04f23ecee6bfd4953a6512b4",
 				Timestamp:     1639105556777,
 				PrevHash:      "0x0000000000000000000000000000000000000000000000000000000000000000",
 				BlockInterval: 3,
@@ -296,13 +349,15 @@ func TestChainNodeService_GenerateNodeConfigForTls(t *testing.T) {
 	var tests []struct {
 		name   string
 		fields fields
-		want   string
+		want1  string
+		want2  string
 	}
 	tests = append(tests, struct {
 		name   string
 		fields fields
-		want   string
-	}{name: "my-test-tls", fields: f, want: `[network_tls]
+		want1  string
+		want2  string
+	}{name: "my-test-tls", fields: f, want1: `[network_tls]
 ca_cert = """
 ab
 """
@@ -363,6 +418,67 @@ storage_port = 50003
 [kms_sm]
 db_key = '123456'
 kms_port = 50005
+`, want2: `[network_tls]
+ca_cert = """
+ab
+"""
+cert = """
+ab
+"""
+grpc_port = 50000
+listen_port = 40000
+priv_key = """
+ef
+"""
+reconnect_timeout = 5
+
+[[network_tls.peers]]
+domain = 'www.my-node-2.com'
+host = 'test-chain-my-node-2-cluster-ip'
+port = 40000
+
+[consensus_raft]
+controller_port = 50004
+grpc_listen_port = 50001
+network_port = 50000
+node_addr = '211dd8d62d6abb236a8ca72dc75489dcc6a79ce2'
+
+[executor_evm]
+executor_port = 50002
+
+[storage_rocksdb]
+kms_port = 50005
+storage_port = 50003
+
+[genesis_block]
+prevhash = '0x0000000000000000000000000000000000000000000000000000000000000000'
+timestamp = 1639105556777
+
+[system_config]
+admin = 'a3203aa7717ba46457d3cb373b10382adc763d2d'
+block_interval = 3
+block_limit = 100
+chain_id = '63586a3c0255f337c77a777ff54f0040b8c388da04f23ecee6bfd4953a6512b4'
+version = 0
+validators = [
+    'c5b606cbd200b79f05a3ed4d92ce9581a0b8ec12',
+	'211dd8d62d6abb236a8ca72dc75489dcc6a79ce2',
+]
+
+[controller]
+consensus_port = 50001
+controller_port = 50004
+executor_port = 50002
+key_id = 1
+kms_port = 50005
+network_port = 50000
+node_address = '211dd8d62d6abb236a8ca72dc75489dcc6a79ce2'
+package_limit = 30000
+storage_port = 50003
+
+[kms_sm]
+db_key = '123456'
+kms_port = 50005
 `})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -373,8 +489,9 @@ kms_port = 50005
 				CaSecret:             tt.fields.CaSecret,
 				NodeCertAndKeySecret: tt.fields.NodeCertAndKeySecret,
 			}
-			if got := cns.GenerateNodeConfig(); got != tt.want {
-				t.Errorf("GenerateNodeConfig() = %v, \n\n\nwant %v", got, tt.want)
+			if got := cns.GenerateNodeConfig(); got == tt.want1 || got == tt.want2 {
+			} else {
+				t.Errorf("GenerateNodeConfig() = %v, \n\n\nwant1 %v, \n\n\nwant2 %v", got, tt.want1, tt.want2)
 			}
 		})
 	}

@@ -48,6 +48,9 @@ type ChainConfigSpec struct {
 
 	// 期望的状态
 	Action ChainStatus `json:"action,omitempty"`
+
+	// ImageInfo
+	ImageInfo `json:"imageInfo,omitempty"`
 }
 
 type ConsensusType string

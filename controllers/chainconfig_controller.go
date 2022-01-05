@@ -52,12 +52,22 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	updated, err := r.SetDefaultSpec(ctx, chainConfig)
-	if updated || err != nil {
+	oldChainConfig := chainConfig.DeepCopy()
+	if err := r.SetDefaultSpec(chainConfig); err != nil {
 		return ctrl.Result{}, err
 	}
+	if !IsEqual(oldChainConfig.Spec, chainConfig.Spec) {
+		diff, _ := DiffObject(oldChainConfig, chainConfig)
+		logger.Info("ChainConfig setDefault: " + string(diff))
+		return ctrl.Result{}, r.Update(ctx, chainConfig)
+	}
 
-	updated, err = r.SetDefaultStatus(ctx, chainConfig)
+	//updated, err := r.SetDefaultSpec(ctx, chainConfig)
+	//if updated || err != nil {
+	//	return ctrl.Result{}, err
+	//}
+
+	updated, err := r.SetDefaultStatus(ctx, chainConfig)
 	if updated || err != nil {
 		return ctrl.Result{}, err
 	}
@@ -101,17 +111,17 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		// 查询共识账户
-		OrdinaryAccountList := &citacloudv1.AccountList{}
-		OrdinaryAccountOpts := []client.ListOption{
+		ConsensusAccountList := &citacloudv1.AccountList{}
+		ConsensusAccountOpts := []client.ListOption{
 			client.InNamespace(chainConfig.Namespace),
 			client.MatchingFields{"spec.chain": chainConfig.Name},
-			client.MatchingFields{"spec.role": string(citacloudv1.Ordinary)},
+			client.MatchingFields{"spec.role": string(citacloudv1.Consensus)},
 		}
-		if err := r.List(ctx, OrdinaryAccountList, OrdinaryAccountOpts...); err != nil {
+		if err := r.List(ctx, ConsensusAccountList, ConsensusAccountOpts...); err != nil {
 			return ctrl.Result{}, err
 		}
 		vaiMap := make(map[string]citacloudv1.ValidatorAccountInfo, 0)
-		for _, acc := range OrdinaryAccountList.Items {
+		for _, acc := range ConsensusAccountList.Items {
 			vai := citacloudv1.ValidatorAccountInfo{Address: acc.Status.Address}
 			vaiMap[acc.Name] = vai
 		}
@@ -178,19 +188,48 @@ func (r *ChainConfigReconciler) SetDefaultStatus(ctx context.Context, chainConfi
 	return false, nil
 }
 
-func (r *ChainConfigReconciler) SetDefaultSpec(ctx context.Context, chainConfig *citacloudv1.ChainConfig) (bool, error) {
-	logger := log.FromContext(ctx)
+func (r *ChainConfigReconciler) SetDefaultSpec(chainConfig *citacloudv1.ChainConfig) error {
+	//logger := log.FromContext(ctx)
+
 	if chainConfig.Spec.Action == "" {
 		chainConfig.Spec.Action = citacloudv1.Publicizing
-		err := r.Client.Update(ctx, chainConfig)
-		if err != nil {
-			logger.Error(err, fmt.Sprintf("set chain config default action value [%s] failed", chainConfig.Spec.Action))
-			return false, err
-		}
-		logger.Info(fmt.Sprintf("set chain config default action value [%s] success", chainConfig.Spec.Action))
-		return true, nil
 	}
-	return false, nil
+
+	if chainConfig.Spec.PullPolicy == "" {
+		chainConfig.Spec.PullPolicy = corev1.PullIfNotPresent
+	}
+
+	// set default images
+	if chainConfig.Spec.NetworkImage == "" {
+		if chainConfig.Spec.EnableTLS {
+			chainConfig.Spec.NetworkImage = "citacloud/network_tls:v6.3.0"
+		} else {
+			chainConfig.Spec.NetworkImage = "citacloud/network_p2p:v6.3.0"
+		}
+	}
+	if chainConfig.Spec.ConsensusImage == "" {
+		if chainConfig.Spec.ConsensusType == citacloudv1.Raft {
+			chainConfig.Spec.ConsensusImage = "citacloud/consensus_raft:v6.3.0"
+		} else if chainConfig.Spec.ConsensusType == citacloudv1.BFT {
+			chainConfig.Spec.ConsensusImage = "citacloud/consensus_bft:v6.3.0"
+		} else {
+			return fmt.Errorf("mismatched consensus type")
+		}
+	}
+	if chainConfig.Spec.ExecutorImage == "" {
+		chainConfig.Spec.ExecutorImage = "citacloud/executor_evm:v6.3.0"
+	}
+	if chainConfig.Spec.StorageImage == "" {
+		chainConfig.Spec.StorageImage = "citacloud/storage_rocksdb:v6.3.0"
+	}
+	if chainConfig.Spec.ControllerImage == "" {
+		chainConfig.Spec.ControllerImage = "citacloud/controller:v6.3.0"
+	}
+	if chainConfig.Spec.KmsImage == "" {
+		chainConfig.Spec.KmsImage = "citacloud/kms_sm:v6.3.0"
+	}
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

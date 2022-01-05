@@ -23,7 +23,6 @@ import (
 	"time"
 
 	citacloudv1 "github.com/cita-cloud/cita-cloud-operator/api/v1"
-	cmd "github.com/cita-cloud/cita-cloud-operator/pkg/exec"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,8 +31,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // ChainNodeReconciler reconciles a ChainNode object
@@ -43,7 +45,6 @@ type ChainNodeReconciler struct {
 	updateConfigFlag      bool
 	updateStatefulSetFlag bool
 	startUpdateTime       time.Time
-	cmd                   cmd.Cmd
 }
 
 //+kubebuilder:rbac:groups=citacloud.rivtower.com,resources=chainnodes,verbs=get;list;watch;create;update;patch;delete
@@ -66,6 +67,21 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if chainConfig.Status.Status != citacloudv1.Online {
+		// if chain is not online
+		logger.Info(fmt.Sprintf("the chain [%s] is not online", chainConfig.Name))
+		oldChainNode := chainNode.DeepCopy()
+		chainNode.Status.Status = citacloudv1.NodeWaitChainOnline
+		if !IsEqual(oldChainNode.Status, chainNode.Status) {
+			if err := r.Client.Status().Update(ctx, chainNode); err != nil {
+				return ctrl.Result{}, err
+			}
+			logger.Info(fmt.Sprintf("update chain node status [%s] success", citacloudv1.NodeWaitChainOnline))
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, nil
+	}
+
 	if chainNode.Spec.Action == citacloudv1.NodeInitialize {
 		oldChainNode := chainNode.DeepCopy()
 		if err := r.SetDefaultSpec(ctx, chainConfig, chainNode); err != nil {
@@ -73,7 +89,7 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		if !IsEqual(oldChainNode.Spec, chainNode.Spec) {
 			diff, _ := DiffObject(oldChainNode, chainNode)
-			logger.Info("SetDefault: " + string(diff))
+			logger.Info("ChainNode setDefault: " + string(diff))
 			return ctrl.Result{}, r.Update(ctx, chainNode)
 		}
 
@@ -87,7 +103,7 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, err
 		}
 		// sync status
-		if err := r.SyncRunningStatus(ctx, chainNode); err != nil {
+		if err := r.SyncRunningStatus(ctx, chainConfig, chainNode); err != nil {
 			return ctrl.Result{}, err
 		}
 	} else if chainNode.Spec.Action == citacloudv1.NodeStop {
@@ -107,38 +123,8 @@ func (r *ChainNodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *ChainNodeReconciler) SetDefaultSpec(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
 	logger := log.FromContext(ctx)
 
-	if chainNode.Spec.PullPolicy == "" {
-		chainNode.Spec.PullPolicy = corev1.PullIfNotPresent
-	}
-
-	// set default images
-	if chainNode.Spec.NetworkImage == "" {
-		if chainConfig.Spec.EnableTLS {
-			chainNode.Spec.NetworkImage = "citacloud/network_tls:v6.3.0"
-		} else {
-			chainNode.Spec.NetworkImage = "citacloud/network_p2p:v6.3.0"
-		}
-	}
-	if chainNode.Spec.ConsensusImage == "" {
-		if chainConfig.Spec.ConsensusType == citacloudv1.Raft {
-			chainNode.Spec.ConsensusImage = "citacloud/consensus_raft:v6.3.0"
-		} else if chainConfig.Spec.ConsensusType == citacloudv1.BFT {
-			chainNode.Spec.ConsensusImage = "citacloud/consensus_bft:v6.3.0"
-		} else {
-			return fmt.Errorf("mismatched consensus type")
-		}
-	}
-	if chainNode.Spec.ExecutorImage == "" {
-		chainNode.Spec.ExecutorImage = "citacloud/executor_evm:v6.3.0"
-	}
-	if chainNode.Spec.StorageImage == "" {
-		chainNode.Spec.StorageImage = "citacloud/storage_rocksdb:v6.3.0"
-	}
-	if chainNode.Spec.ControllerImage == "" {
-		chainNode.Spec.ControllerImage = "citacloud/controller:v6.3.0"
-	}
-	if chainNode.Spec.KmsImage == "" {
-		chainNode.Spec.KmsImage = "citacloud/kms_sm:v6.3.0"
+	if chainNode.Spec.ImageInfo == (citacloudv1.ImageInfo{}) {
+		chainNode.Spec.ImageInfo = chainConfig.Spec.ImageInfo
 	}
 
 	// set domain
@@ -202,10 +188,43 @@ func (r *ChainNodeReconciler) ReconcileAllRecourse(ctx context.Context, chainCon
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ChainNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	logger := log.FromContext(context.TODO())
+
+	p := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldObj := e.ObjectOld.(*citacloudv1.ChainConfig)
+			newObj := e.ObjectNew.(*citacloudv1.ChainConfig)
+			if !reflect.DeepEqual(oldObj.Spec.ImageInfo, newObj.Spec.ImageInfo) {
+				logger.Info(fmt.Sprintf("the chain [%s/%s] imageInfo field has changed, enqueue", newObj.Namespace, newObj.Name))
+				return true
+			}
+			return false
+		},
+	}
+
+	opts := []builder.WatchesOption{
+		builder.WithPredicates(p),
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&citacloudv1.ChainNode{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(r.statefulSetPredicates())).
 		Owns(&corev1.ConfigMap{}).
+		Watches(
+			&source.Kind{Type: &citacloudv1.ChainConfig{}},
+			//&handler.EnqueueRequestForOwner{OwnerType: &citacloudv1.ChainNode{}, IsController: false},
+			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+				// 筛选出下面所有的node节点，并进行入队
+				reqs := make([]reconcile.Request, 0)
+				chainConfig := a.(*citacloudv1.ChainConfig)
+				for name := range chainConfig.Status.NodeInfoMap {
+					req := reconcile.Request{NamespacedName: types.NamespacedName{Name: name, Namespace: a.GetNamespace()}}
+					reqs = append(reqs, req)
+				}
+				return reqs
+			}),
+			opts...,
+		).
 		Complete(r)
 }
 

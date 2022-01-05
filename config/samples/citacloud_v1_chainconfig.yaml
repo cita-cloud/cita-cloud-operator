@@ -11,4 +11,7 @@ spec:
   blockLimit: 100
   enableTls: false
   consensusType: Raft
+#  action: Publicizing
   action: Online
+  imageInfo:
+    pullPolicy: Always
