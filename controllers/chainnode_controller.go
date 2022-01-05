@@ -32,8 +32,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // ChainNodeReconciler reconciles a ChainNode object
@@ -217,23 +220,43 @@ func (r *ChainNodeReconciler) ReconcileAllRecourse(ctx context.Context, chainCon
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ChainNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	logger := log.FromContext(context.TODO())
+
+	p := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldObj := e.ObjectOld.(*citacloudv1.ChainConfig)
+			newObj := e.ObjectNew.(*citacloudv1.ChainConfig)
+			if !reflect.DeepEqual(oldObj.Spec.ImageInfo, newObj.Spec.ImageInfo) {
+				logger.Info(fmt.Sprintf("the chain [%s/%s] imageInfo field has changed, enqueue", newObj.Namespace, newObj.Name))
+				return true
+			}
+			return false
+		},
+	}
+
+	opts := []builder.WatchesOption{
+		builder.WithPredicates(p),
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&citacloudv1.ChainNode{}).
 		Owns(&appsv1.StatefulSet{}, builder.WithPredicates(r.statefulSetPredicates())).
 		Owns(&corev1.ConfigMap{}).
-		//Watches(
-		//	&source.Kind{Type: &citacloudv1.ChainConfig{}},
-		//	//&handler.EnqueueRequestForOwner{OwnerType: &citacloudv1.ChainNode{}, IsController: false},
-		//	handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
-		//		// 筛选出下面所有的node节点，并进行入队
-		//		return []reconcile.Request{
-		//			{NamespacedName: types.NamespacedName{
-		//				Name:      a.GetName() + "-1",
-		//				Namespace: a.GetNamespace(),
-		//			}},
-		//		}
-		//	}),
-		//).
+		Watches(
+			&source.Kind{Type: &citacloudv1.ChainConfig{}},
+			//&handler.EnqueueRequestForOwner{OwnerType: &citacloudv1.ChainNode{}, IsController: false},
+			handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+				// 筛选出下面所有的node节点，并进行入队
+				reqs := make([]reconcile.Request, 0)
+				chainConfig := a.(*citacloudv1.ChainConfig)
+				for name := range chainConfig.Status.NodeInfoMap {
+					req := reconcile.Request{NamespacedName: types.NamespacedName{Name: name, Namespace: a.GetNamespace()}}
+					reqs = append(reqs, req)
+				}
+				return reqs
+			}),
+			opts...,
+		).
 		Complete(r)
 }
 
