@@ -78,7 +78,7 @@ const (
 // ChainConfigStatus defines the observed state of ChainConfig
 type ChainConfigStatus struct {
 	// admin账户信息
-	AdminAccount AdminAccountInfo `json:"adminAccount,omitempty"`
+	AdminAccount *AdminAccountInfo `json:"adminAccount,omitempty"`
 	// 共识节点账户信息
 	ValidatorAccountMap map[string]ValidatorAccountInfo `json:"validatorAccountMap,omitempty"`
 	// 状态
