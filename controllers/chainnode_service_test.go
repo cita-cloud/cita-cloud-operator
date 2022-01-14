@@ -32,7 +32,7 @@ func TestChainNodeService_GenerateNodeConfigForP2P(t *testing.T) {
 				Action:        citacloudv1.Online,
 			},
 			Status: citacloudv1.ChainConfigStatus{
-				AdminAccount: citacloudv1.AdminAccountInfo{
+				AdminAccount: &citacloudv1.AdminAccountInfo{
 					Name:    "admin",
 					Address: "a3203aa7717ba46457d3cb373b10382adc763d2d",
 				},
@@ -258,7 +258,7 @@ func TestChainNodeService_GenerateNodeConfigForTls(t *testing.T) {
 				Action:        citacloudv1.Online,
 			},
 			Status: citacloudv1.ChainConfigStatus{
-				AdminAccount: citacloudv1.AdminAccountInfo{
+				AdminAccount: &citacloudv1.AdminAccountInfo{
 					Name:    "admin",
 					Address: "a3203aa7717ba46457d3cb373b10382adc763d2d",
 				},

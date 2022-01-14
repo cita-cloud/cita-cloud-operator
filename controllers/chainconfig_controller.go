@@ -106,7 +106,7 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			aai.Name = adminAccountList.Items[0].Name
 		}
 		if !reflect.DeepEqual(chainConfig.Status.AdminAccount, aai) {
-			chainConfig.Status.AdminAccount = aai
+			chainConfig.Status.AdminAccount = &aai
 			updateFlag = true
 		}
 
