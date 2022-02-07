@@ -16,11 +16,11 @@ import (
 func (r *ChainNodeReconciler) ReconcileService(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
 	logger := log.FromContext(ctx)
 	old := &corev1.Service{}
-	err := r.Get(ctx, types.NamespacedName{Name: GetClusterIPName(chainNode.Spec.ChainName, chainNode.Name), Namespace: chainNode.Namespace}, old)
+	err := r.Get(ctx, types.NamespacedName{Name: GetClusterIPName(chainNode.Name), Namespace: chainNode.Namespace}, old)
 	if errors.IsNotFound(err) {
 		newObj := &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      GetClusterIPName(chainNode.Spec.ChainName, chainNode.Name),
+				Name:      GetClusterIPName(chainNode.Name),
 				Namespace: chainNode.Namespace,
 			},
 		}

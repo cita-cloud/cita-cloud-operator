@@ -409,7 +409,7 @@ func GetVolumes(chainNode *citacloudv1.ChainNode) []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: GetNodeConfigName(chainNode.Spec.ChainName, chainNode.Name),
+						Name: GetNodeConfigName(chainNode.Name),
 					},
 				},
 			},
@@ -420,7 +420,7 @@ func GetVolumes(chainNode *citacloudv1.ChainNode) []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: GetLogConfigName(chainNode.Spec.ChainName, chainNode.Name),
+						Name: GetLogConfigName(chainNode.Name),
 					},
 				},
 			},

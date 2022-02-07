@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// SyncStatus
+// SyncRunningStatus
 // 如果status == Initialized，则判断当前pod的ready
 func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
 	logger := log.FromContext(ctx)

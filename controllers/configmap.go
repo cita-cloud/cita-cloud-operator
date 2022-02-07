@@ -16,11 +16,11 @@ import (
 func (r *ChainNodeReconciler) ReconcileConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (bool, error) {
 	logger := log.FromContext(ctx)
 	old := &corev1.ConfigMap{}
-	err := r.Get(ctx, types.NamespacedName{Name: GetNodeConfigName(chainNode.Spec.ChainName, chainNode.Name), Namespace: chainNode.Namespace}, old)
+	err := r.Get(ctx, types.NamespacedName{Name: GetNodeConfigName(chainNode.Name), Namespace: chainNode.Namespace}, old)
 	if errors.IsNotFound(err) {
 		newObj := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      GetNodeConfigName(chainNode.Spec.ChainName, chainNode.Name),
+				Name:      GetNodeConfigName(chainNode.Name),
 				Namespace: chainNode.Namespace,
 			},
 		}
@@ -72,7 +72,7 @@ func (r *ChainNodeReconciler) updateNodeConfigMap(ctx context.Context, chainConf
 		}
 		// get node secret
 		nodeCertAndKeySecret := &corev1.Secret{}
-		if err := r.Get(ctx, types.NamespacedName{Name: GetAccountCertAndKeySecretName(chainConfig.Name, chainNode.Spec.Account), Namespace: chainNode.Namespace}, nodeCertAndKeySecret); err != nil {
+		if err := r.Get(ctx, types.NamespacedName{Name: GetAccountCertAndKeySecretName(chainNode.Spec.Account), Namespace: chainNode.Namespace}, nodeCertAndKeySecret); err != nil {
 			logger.Error(err, "get node secret error")
 			return err
 		}
@@ -91,11 +91,11 @@ func (r *ChainNodeReconciler) updateNodeConfigMap(ctx context.Context, chainConf
 func (r *ChainNodeReconciler) ReconcileLogConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (bool, error) {
 	logger := log.FromContext(ctx)
 	old := &corev1.ConfigMap{}
-	err := r.Get(ctx, types.NamespacedName{Name: GetLogConfigName(chainNode.Spec.ChainName, chainNode.Name), Namespace: chainNode.Namespace}, old)
+	err := r.Get(ctx, types.NamespacedName{Name: GetLogConfigName(chainNode.Name), Namespace: chainNode.Namespace}, old)
 	if errors.IsNotFound(err) {
 		newObj := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      GetLogConfigName(chainNode.Spec.ChainName, chainNode.Name),
+				Name:      GetLogConfigName(chainNode.Name),
 				Namespace: chainNode.Namespace,
 			},
 		}

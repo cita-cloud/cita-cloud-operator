@@ -236,7 +236,7 @@ port = 40000
 			networkStr = networkStr + fmt.Sprintf(`[[network_p2p.peers]]
 address = '/dns4/%s/tcp/%d'
 
-`, GetClusterIPName(cns.ChainConfig.Name, key), 40000)
+`, GetClusterIPName(key), 40000)
 		} else {
 			networkStr = networkStr + fmt.Sprintf(`[[network_p2p.peers]]
 address = '/dns4/%s/tcp/%d'
@@ -277,7 +277,7 @@ domain = '%s'
 host = '%s'
 port = %d
 
-`, node.Domain, GetClusterIPName(cns.ChainConfig.Name, key), 40000)
+`, node.Domain, GetClusterIPName(key), 40000)
 		} else {
 			networkStr = networkStr + fmt.Sprintf(`[[network_tls.peers]]
 domain = '%s'
