@@ -16,11 +16,11 @@ import (
 func (r *ChainNodeReconciler) ReconcileService(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
 	logger := log.FromContext(ctx)
 	old := &corev1.Service{}
-	err := r.Get(ctx, types.NamespacedName{Name: GetClusterIPName(chainNode.Name), Namespace: chainNode.Namespace}, old)
+	err := r.Get(ctx, types.NamespacedName{Name: GetNodePortServiceName(chainNode.Name), Namespace: chainNode.Namespace}, old)
 	if errors.IsNotFound(err) {
 		newObj := &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      GetClusterIPName(chainNode.Name),
+				Name:      GetNodePortServiceName(chainNode.Name),
 				Namespace: chainNode.Namespace,
 			},
 		}
@@ -49,13 +49,24 @@ func (r *ChainNodeReconciler) updateService(ctx context.Context, chainConfig *ci
 	service.Spec = corev1.ServiceSpec{
 		Selector: labels,
 		Ports: []corev1.ServicePort{
+			// randomly generated nodePort
 			{
 				Name:       "network",
-				Port:       40000,
+				Port:       NetworkPort,
 				TargetPort: intstr.FromInt(NetworkPort),
 			},
+			{
+				Name:       "rpc",
+				Port:       ControllerPort,
+				TargetPort: intstr.FromInt(ControllerPort),
+			},
+			{
+				Name:       "call",
+				Port:       ExecutorPort,
+				TargetPort: intstr.FromInt(ExecutorPort),
+			},
 		},
-		Type: corev1.ServiceTypeClusterIP,
+		Type: corev1.ServiceTypeNodePort,
 	}
 
 	return nil

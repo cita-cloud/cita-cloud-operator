@@ -202,7 +202,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
-								ContainerPort: 50002,
+								ContainerPort: ExecutorPort,
 								Protocol:      corev1.ProtocolTCP,
 								Name:          "grpc",
 							},
@@ -210,7 +210,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						Command: []string{
 							"sh",
 							"-c",
-							"executor run -p 50002",
+							fmt.Sprintf("executor run -p %d", ExecutorPort),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{

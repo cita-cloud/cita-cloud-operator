@@ -12,9 +12,9 @@ func GetLogConfigName(nodeName string) string {
 	return fmt.Sprintf("%s-log", nodeName)
 }
 
-// GetClusterIPName get node's clusterIP service name
-func GetClusterIPName(nodeName string) string {
-	return fmt.Sprintf("%s-cluster-ip", nodeName)
+// GetNodePortServiceName get node's clusterIP service name
+func GetNodePortServiceName(nodeName string) string {
+	return fmt.Sprintf("%s-nodeport", nodeName)
 }
 
 func GetCaSecretName(chainName string) string {
