@@ -21,8 +21,8 @@ func GetCaSecretName(chainName string) string {
 	return fmt.Sprintf("%s-ca-secret", chainName)
 }
 
-func GetAccountConfigmap(chainName, account string) string {
-	return fmt.Sprintf("%s-%s", chainName, account)
+func GetAccountConfigmap(account string) string {
+	return fmt.Sprintf("%s-account", account)
 }
 
 func GetAccountCertAndKeySecretName(account string) string {
