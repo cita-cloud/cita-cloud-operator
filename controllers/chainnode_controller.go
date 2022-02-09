@@ -197,6 +197,9 @@ func (r *ChainNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			if !reflect.DeepEqual(oldObj.Spec.ImageInfo, newObj.Spec.ImageInfo) {
 				logger.Info(fmt.Sprintf("the chain [%s/%s] imageInfo field has changed, enqueue", newObj.Namespace, newObj.Name))
 				return true
+			} else if !reflect.DeepEqual(oldObj.Status.NodeInfoMap, newObj.Status.NodeInfoMap) {
+				logger.Info(fmt.Sprintf("the chain [%s/%s] status.nodeInfoMap field has changed, enqueue", newObj.Namespace, newObj.Name))
+				return true
 			}
 			return false
 		},

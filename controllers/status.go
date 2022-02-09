@@ -46,6 +46,14 @@ func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainConfig
 		} else if !reflect.DeepEqual(chainConfig.Spec.ImageInfo, chainNode.Spec.ImageInfo) {
 			// imageInfo is inconsistent
 			chainNode.Status.Status = citacloudv1.NodeWarning
+		} else {
+			changed, err := r.checkNetworkConfigChanged(ctx, chainConfig, chainNode)
+			if err != nil {
+				return err
+			}
+			if changed {
+				chainNode.Status.Status = citacloudv1.NodeWarning
+			}
 		}
 	} else if chainNode.Status.Status == citacloudv1.NodeError {
 		if pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) {

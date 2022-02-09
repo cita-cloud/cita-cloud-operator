@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/pelletier/go-toml"
+	"reflect"
 
 	citacloudv1 "github.com/cita-cloud/cita-cloud-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -139,4 +141,28 @@ func (r *ChainNodeReconciler) updateLogConfigMap(ctx context.Context, chainConfi
 		StorageLogConfigFile:    cnService.GenerateStorageLogConfig(),
 	}
 	return nil
+}
+
+// checkNetworkConfigChanged check weather network config changed
+func (r *ChainNodeReconciler) checkNetworkConfigChanged(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (bool, error) {
+	config := &corev1.ConfigMap{}
+	err := r.Get(ctx, types.NamespacedName{Name: GetNodeConfigName(chainNode.Name), Namespace: chainNode.Namespace}, config)
+	if err != nil {
+		return false, err
+	}
+	configContent, err := toml.Load(config.Data[NodeConfigFile])
+	if err != nil {
+		return false, err
+	}
+	networkP2p := configContent.Get("network_p2p").(*toml.Tree)
+	peers := networkP2p.GetArray("peers")
+	if reflect.TypeOf(peers).Kind() == reflect.Slice {
+		if (len(chainConfig.Status.NodeInfoMap) - 1) == reflect.ValueOf(peers).Len() {
+			return false, nil
+		} else {
+			return true, nil
+		}
+	} else {
+		return false, fmt.Errorf("network config format error")
+	}
 }

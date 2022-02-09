@@ -73,7 +73,7 @@ const (
 	NodeWarning         NodeStatus = "Warning"
 	NodeError           NodeStatus = "Error"
 	NodeUpdating        NodeStatus = "Updating"
-	// if chainnode's config modified, chainnode should restart
+	// NodeNeedRestart if chainnode's config modified, chainnode should restart
 	NodeNeedRestart NodeStatus = "NeedRestart"
 	NodeStopping    NodeStatus = "Stopping"
 	NodeStopped     NodeStatus = "Stopped"
