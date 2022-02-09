@@ -1,0 +1,22 @@
+# Default values for cita-cloud-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  # global.registry -- You can specify the image registry.
+  #  registry: docker.io
+  registry: registry.devops.rivtower.com
+  # global.repository -- You can specify the image repository.
+  repository: cita-cloud/operator
+
+image:
+  pullPolicy: Always
+  tag: v0.0.1
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
