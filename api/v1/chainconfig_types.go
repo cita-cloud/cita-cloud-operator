@@ -80,13 +80,13 @@ type ChainConfigStatus struct {
 	// admin账户信息
 	AdminAccount *AdminAccountInfo `json:"adminAccount,omitempty"`
 	// 共识节点账户信息
-	ValidatorAccountMap map[string]ValidatorAccountInfo `json:"validatorAccountMap,omitempty"`
+	ValidatorAccountList []ValidatorAccountInfo `json:"validatorAccountList,omitempty"`
 	// 状态
 	Status ChainStatus `json:"status,omitempty"`
 	// 详情
 	Message string `json:"message,omitempty"`
 	// 链下节点信息
-	NodeInfoMap map[string]NodeInfo `json:"nodeInfoMap,omitempty"`
+	NodeInfoList []NodeInfo `json:"nodeInfoList,omitempty"`
 }
 
 //+kubebuilder:object:root=true

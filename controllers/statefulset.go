@@ -202,7 +202,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
-								ContainerPort: 50002,
+								ContainerPort: ExecutorPort,
 								Protocol:      corev1.ProtocolTCP,
 								Name:          "grpc",
 							},
@@ -210,7 +210,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						Command: []string{
 							"sh",
 							"-c",
-							"executor run -p 50002",
+							fmt.Sprintf("executor run -p %d", ExecutorPort),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -398,7 +398,7 @@ func GetVolumes(chainNode *citacloudv1.ChainNode) []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: GetAccountConfigmap(chainNode.Spec.ChainName, chainNode.Spec.Account),
+						Name: GetAccountConfigmap(chainNode.Spec.Account),
 					},
 				},
 			},
@@ -409,7 +409,7 @@ func GetVolumes(chainNode *citacloudv1.ChainNode) []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: GetNodeConfigName(chainNode.Spec.ChainName, chainNode.Name),
+						Name: GetNodeConfigName(chainNode.Name),
 					},
 				},
 			},
@@ -420,7 +420,7 @@ func GetVolumes(chainNode *citacloudv1.ChainNode) []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: GetLogConfigName(chainNode.Spec.ChainName, chainNode.Name),
+						Name: GetLogConfigName(chainNode.Name),
 					},
 				},
 			},

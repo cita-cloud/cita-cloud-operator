@@ -126,7 +126,14 @@ func (r *ChainNodeReconciler) SetDefaultSpec(ctx context.Context, chainConfig *c
 	if chainNode.Spec.ImageInfo == (citacloudv1.ImageInfo{}) {
 		chainNode.Spec.ImageInfo = chainConfig.Spec.ImageInfo
 	}
-
+	// set name
+	if chainNode.Spec.Name == "" {
+		chainNode.Spec.Name = chainNode.Name
+	}
+	// set
+	if chainNode.Spec.CreationTimestamp == nil {
+		chainNode.Spec.CreationTimestamp = &chainNode.CreationTimestamp
+	}
 	// set domain
 	if chainNode.Spec.Domain == "" {
 		account := &citacloudv1.Account{}
@@ -197,6 +204,9 @@ func (r *ChainNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			if !reflect.DeepEqual(oldObj.Spec.ImageInfo, newObj.Spec.ImageInfo) {
 				logger.Info(fmt.Sprintf("the chain [%s/%s] imageInfo field has changed, enqueue", newObj.Namespace, newObj.Name))
 				return true
+			} else if !reflect.DeepEqual(oldObj.Status.NodeInfoList, newObj.Status.NodeInfoList) {
+				logger.Info(fmt.Sprintf("the chain [%s/%s] status.nodeInfoMap field has changed, enqueue", newObj.Namespace, newObj.Name))
+				return true
 			}
 			return false
 		},
@@ -217,8 +227,8 @@ func (r *ChainNodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				// 筛选出下面所有的node节点，并进行入队
 				reqs := make([]reconcile.Request, 0)
 				chainConfig := a.(*citacloudv1.ChainConfig)
-				for name := range chainConfig.Status.NodeInfoMap {
-					req := reconcile.Request{NamespacedName: types.NamespacedName{Name: name, Namespace: a.GetNamespace()}}
+				for _, nodeInfo := range chainConfig.Status.NodeInfoList {
+					req := reconcile.Request{NamespacedName: types.NamespacedName{Name: nodeInfo.Name, Namespace: a.GetNamespace()}}
 					reqs = append(reqs, req)
 				}
 				return reqs

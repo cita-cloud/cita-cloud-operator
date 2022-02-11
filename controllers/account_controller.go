@@ -73,7 +73,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// check account
 	var accountAddress string
 	accountConfigMap := &corev1.ConfigMap{}
-	err := r.Get(ctx, types.NamespacedName{Name: GetAccountConfigmap(account.Spec.Chain, account.Name), Namespace: account.Namespace}, accountConfigMap)
+	err := r.Get(ctx, types.NamespacedName{Name: GetAccountConfigmap(account.Name), Namespace: account.Namespace}, accountConfigMap)
 	if err != nil && errors.IsNotFound(err) {
 		keyId, address, err := cc.CreateAccount(account.Spec.KmsPassword)
 		accountAddress = address
@@ -82,7 +82,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 
 		accountConfigMap.ObjectMeta = metav1.ObjectMeta{
-			Name:      GetAccountConfigmap(account.Spec.Chain, account.Name),
+			Name:      GetAccountConfigmap(account.Name),
 			Namespace: account.Namespace,
 			Labels:    LabelsForChain(chainConfig.Name),
 		}
@@ -160,14 +160,14 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 
 		accountCertAndKeySecret := &corev1.Secret{}
-		err := r.Get(ctx, types.NamespacedName{Name: GetAccountCertAndKeySecretName(chainConfig.Name, account.Name), Namespace: account.Namespace}, accountCertAndKeySecret)
+		err := r.Get(ctx, types.NamespacedName{Name: GetAccountCertAndKeySecretName(account.Name), Namespace: account.Namespace}, accountCertAndKeySecret)
 		if err != nil && errors.IsNotFound(err) {
 			csr, key, cert, err := cc.CreateSignCsrAndRead(account.Spec.Domain)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
 			accountCertAndKeySecret.ObjectMeta = metav1.ObjectMeta{
-				Name:      GetAccountCertAndKeySecretName(chainConfig.Name, account.Name),
+				Name:      GetAccountCertAndKeySecretName(account.Name),
 				Namespace: account.Namespace,
 				Labels:    LabelsForChain(chainConfig.Name),
 			}

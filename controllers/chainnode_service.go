@@ -224,10 +224,8 @@ grpc_port = 50000
 port = 40000
 
 `
-
-	nodeList := cns.ChainConfig.Status.NodeInfoMap
-	for key, node := range nodeList {
-		if key == cns.ChainNode.Name {
+	for _, node := range cns.ChainConfig.Status.NodeInfoList {
+		if node.Name == cns.ChainNode.Name {
 			// ignore with match name
 			continue
 		}
@@ -236,7 +234,7 @@ port = 40000
 			networkStr = networkStr + fmt.Sprintf(`[[network_p2p.peers]]
 address = '/dns4/%s/tcp/%d'
 
-`, GetClusterIPName(cns.ChainConfig.Name, key), 40000)
+`, GetNodePortServiceName(node.Name), NetworkPort)
 		} else {
 			networkStr = networkStr + fmt.Sprintf(`[[network_p2p.peers]]
 address = '/dns4/%s/tcp/%d'
@@ -264,9 +262,8 @@ reconnect_timeout = 5
 
 `, string(cns.CaSecret.Data[CaCert]), string(cns.NodeCertAndKeySecret.Data[NodeCert]), string(cns.NodeCertAndKeySecret.Data[NodeKey]))
 
-	nodeList := cns.ChainConfig.Status.NodeInfoMap
-	for key, node := range nodeList {
-		if key == cns.ChainNode.Name {
+	for _, node := range cns.ChainConfig.Status.NodeInfoList {
+		if node.Name == cns.ChainNode.Name {
 			// ignore with match name
 			continue
 		}
@@ -277,7 +274,7 @@ domain = '%s'
 host = '%s'
 port = %d
 
-`, node.Domain, GetClusterIPName(cns.ChainConfig.Name, key), 40000)
+`, node.Domain, GetNodePortServiceName(node.Name), NetworkPort)
 		} else {
 			networkStr = networkStr + fmt.Sprintf(`[[network_tls.peers]]
 domain = '%s'
@@ -330,7 +327,7 @@ version = 0
 validators = [
 `, cns.ChainConfig.Spec.PrevHash, cns.ChainConfig.Spec.Timestamp, cns.ChainConfig.Status.AdminAccount.Address,
 		cns.ChainConfig.Spec.BlockInterval, cns.ChainConfig.Spec.BlockLimit, cns.ChainConfig.Spec.Id)
-	for _, validator := range cns.ChainConfig.Status.ValidatorAccountMap {
+	for _, validator := range cns.ChainConfig.Status.ValidatorAccountList {
 		s := fmt.Sprintf(`    '%s',
 `, validator.Address)
 		basicStr = basicStr + s

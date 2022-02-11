@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// SyncStatus
+// SyncRunningStatus
 // 如果status == Initialized，则判断当前pod的ready
 func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) error {
 	logger := log.FromContext(ctx)
@@ -46,6 +46,14 @@ func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainConfig
 		} else if !reflect.DeepEqual(chainConfig.Spec.ImageInfo, chainNode.Spec.ImageInfo) {
 			// imageInfo is inconsistent
 			chainNode.Status.Status = citacloudv1.NodeWarning
+		} else {
+			//changed, err := r.checkNetworkConfigChanged(ctx, chainConfig, chainNode)
+			//if err != nil {
+			//	return err
+			//}
+			//if changed {
+			//	chainNode.Status.Status = citacloudv1.NodeWarning
+			//}
 		}
 	} else if chainNode.Status.Status == citacloudv1.NodeError {
 		if pointer.Int32Equal(pointer.Int32(sts.Status.ReadyReplicas), sts.Spec.Replicas) {
@@ -62,6 +70,16 @@ func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainConfig
 	} else if chainNode.Status.Status == citacloudv1.NodeStopped {
 		chainNode.Status.Status = citacloudv1.NodeStarting
 		r.updateStatefulSetFlag = false
+	} else if chainNode.Status.Status == citacloudv1.NodeWarning {
+		same, err := r.checkNetworkConfigSame(ctx, chainConfig, chainNode)
+		if err != nil {
+			return err
+		}
+		if same {
+			logger.Info("config has been synced, updating chain node status [Running]...")
+			chainNode.Status.Status = citacloudv1.NodeRunning
+			r.updateConfigFlag = false
+		}
 	}
 
 	if r.updateStatefulSetFlag {
@@ -72,6 +90,7 @@ func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainConfig
 
 	if r.updateConfigFlag {
 		// chainnode's config modified, set warning status
+		logger.Info("config should be updated, updating chain node status [Warning]...")
 		chainNode.Status.Status = citacloudv1.NodeWarning
 	}
 

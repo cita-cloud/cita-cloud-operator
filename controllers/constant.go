@@ -23,7 +23,9 @@ const (
 	NetworkLogConfigFile    = "network-log4rs.yaml"
 	StorageLogConfigFile    = "storage-log4rs.yaml"
 
-	NetworkPort = 40000
+	NetworkPort    = 40000
+	ControllerPort = 50004
+	ExecutorPort   = 50002
 
 	CaCert = "cert.pem"
 	CaKey  = "key.pem"

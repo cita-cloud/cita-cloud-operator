@@ -3,6 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/pelletier/go-toml"
+	"reflect"
 
 	citacloudv1 "github.com/cita-cloud/cita-cloud-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -16,11 +18,11 @@ import (
 func (r *ChainNodeReconciler) ReconcileConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (bool, error) {
 	logger := log.FromContext(ctx)
 	old := &corev1.ConfigMap{}
-	err := r.Get(ctx, types.NamespacedName{Name: GetNodeConfigName(chainNode.Spec.ChainName, chainNode.Name), Namespace: chainNode.Namespace}, old)
+	err := r.Get(ctx, types.NamespacedName{Name: GetNodeConfigName(chainNode.Name), Namespace: chainNode.Namespace}, old)
 	if errors.IsNotFound(err) {
 		newObj := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      GetNodeConfigName(chainNode.Spec.ChainName, chainNode.Name),
+				Name:      GetNodeConfigName(chainNode.Name),
 				Namespace: chainNode.Namespace,
 			},
 		}
@@ -41,9 +43,10 @@ func (r *ChainNodeReconciler) ReconcileConfigMap(ctx context.Context, chainConfi
 		logger.Info("the configmap part has not changed, go pass")
 		return false, nil
 	}
-
-	logger.Info("update node configmap...")
-	return true, r.Update(ctx, cur)
+	logger.Info(fmt.Sprintf("should update node [%s/%s] configmap...", chainNode.Namespace, chainNode.Name))
+	return true, nil
+	//logger.Info(fmt.Sprintf("update node [%s/%s] configmap...", chainNode.Namespace, chainNode.Name))
+	//return true, r.Update(ctx, cur)
 }
 
 func (r *ChainNodeReconciler) updateNodeConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, configMap *corev1.ConfigMap) error {
@@ -72,7 +75,7 @@ func (r *ChainNodeReconciler) updateNodeConfigMap(ctx context.Context, chainConf
 		}
 		// get node secret
 		nodeCertAndKeySecret := &corev1.Secret{}
-		if err := r.Get(ctx, types.NamespacedName{Name: GetAccountCertAndKeySecretName(chainConfig.Name, chainNode.Spec.Account), Namespace: chainNode.Namespace}, nodeCertAndKeySecret); err != nil {
+		if err := r.Get(ctx, types.NamespacedName{Name: GetAccountCertAndKeySecretName(chainNode.Spec.Account), Namespace: chainNode.Namespace}, nodeCertAndKeySecret); err != nil {
 			logger.Error(err, "get node secret error")
 			return err
 		}
@@ -91,11 +94,11 @@ func (r *ChainNodeReconciler) updateNodeConfigMap(ctx context.Context, chainConf
 func (r *ChainNodeReconciler) ReconcileLogConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (bool, error) {
 	logger := log.FromContext(ctx)
 	old := &corev1.ConfigMap{}
-	err := r.Get(ctx, types.NamespacedName{Name: GetLogConfigName(chainNode.Spec.ChainName, chainNode.Name), Namespace: chainNode.Namespace}, old)
+	err := r.Get(ctx, types.NamespacedName{Name: GetLogConfigName(chainNode.Name), Namespace: chainNode.Namespace}, old)
 	if errors.IsNotFound(err) {
 		newObj := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      GetLogConfigName(chainNode.Spec.ChainName, chainNode.Name),
+				Name:      GetLogConfigName(chainNode.Name),
 				Namespace: chainNode.Namespace,
 			},
 		}
@@ -117,8 +120,10 @@ func (r *ChainNodeReconciler) ReconcileLogConfigMap(ctx context.Context, chainCo
 		return false, nil
 	}
 
-	logger.Info("update log configmap...")
-	return true, r.Update(ctx, cur)
+	logger.Info(fmt.Sprintf("should update node [%s/%s] log configmap...", chainNode.Namespace, chainNode.Name))
+	return true, nil
+	//logger.Info("update log configmap...")
+	//return true, r.Update(ctx, cur)
 }
 
 func (r *ChainNodeReconciler) updateLogConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, configMap *corev1.ConfigMap) error {
@@ -139,4 +144,28 @@ func (r *ChainNodeReconciler) updateLogConfigMap(ctx context.Context, chainConfi
 		StorageLogConfigFile:    cnService.GenerateStorageLogConfig(),
 	}
 	return nil
+}
+
+// checkNetworkConfigChanged check weather network config changed
+func (r *ChainNodeReconciler) checkNetworkConfigSame(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (bool, error) {
+	config := &corev1.ConfigMap{}
+	err := r.Get(ctx, types.NamespacedName{Name: GetNodeConfigName(chainNode.Name), Namespace: chainNode.Namespace}, config)
+	if err != nil {
+		return false, err
+	}
+	configContent, err := toml.Load(config.Data[NodeConfigFile])
+	if err != nil {
+		return false, err
+	}
+	networkP2p := configContent.Get("network_p2p").(*toml.Tree)
+	peers := networkP2p.GetArray("peers")
+	if reflect.TypeOf(peers).Kind() == reflect.Slice {
+		if (len(chainConfig.Status.NodeInfoList) - 1) == reflect.ValueOf(peers).Len() {
+			return false, nil
+		} else {
+			return true, nil
+		}
+	} else {
+		return false, fmt.Errorf("network config format error")
+	}
 }
