@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -120,14 +121,16 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if err := r.List(ctx, ConsensusAccountList, ConsensusAccountOpts...); err != nil {
 			return ctrl.Result{}, err
 		}
-		vaiMap := make(map[string]citacloudv1.ValidatorAccountInfo, 0)
+		vaiList := make([]citacloudv1.ValidatorAccountInfo, 0)
 		for _, acc := range ConsensusAccountList.Items {
-			vai := citacloudv1.ValidatorAccountInfo{Address: acc.Status.Address}
-			vaiMap[acc.Name] = vai
+			vai := citacloudv1.ValidatorAccountInfo{Name: acc.Name, Address: acc.Status.Address, CreationTimestamp: &acc.CreationTimestamp}
+			vaiList = append(vaiList, vai)
 		}
-
-		if !reflect.DeepEqual(chainConfig.Status.ValidatorAccountMap, vaiMap) {
-			chainConfig.Status.ValidatorAccountMap = vaiMap
+		// sort by creationTimestamp
+		sort.Sort(citacloudv1.ByCreationTimestampForValidatorAccount(vaiList))
+		// compare and update
+		if !reflect.DeepEqual(chainConfig.Status.ValidatorAccountList, vaiList) {
+			chainConfig.Status.ValidatorAccountList = vaiList
 			updateFlag = true
 		}
 		if updateFlag {
@@ -152,14 +155,19 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if err := r.List(ctx, chainNodeList, opts...); err != nil {
 		return ctrl.Result{}, err
 	}
-	nodeInfoMap := make(map[string]citacloudv1.NodeInfo, 0)
+	nodeInfoList := make([]citacloudv1.NodeInfo, 0)
 	for _, nl := range chainNodeList.Items {
 		// set node status
 		nl.Spec.NodeInfo.Status = nl.Status.Status
-		nodeInfoMap[nl.Name] = nl.Spec.NodeInfo
+		// set node status createTime for sort
+		nl.Spec.NodeInfo.CreationTimestamp = &nl.CreationTimestamp
+		nodeInfoList = append(nodeInfoList, nl.Spec.NodeInfo)
 	}
-	if !reflect.DeepEqual(chainConfig.Status.NodeInfoMap, nodeInfoMap) {
-		chainConfig.Status.NodeInfoMap = nodeInfoMap
+	// sort by creationTimestamp
+	sort.Sort(citacloudv1.ByCreationTimestampForNode(nodeInfoList))
+	// compare and update
+	if !reflect.DeepEqual(chainConfig.Status.NodeInfoList, nodeInfoList) {
+		chainConfig.Status.NodeInfoList = nodeInfoList
 		updateStatusFlag = true
 	}
 	if updateStatusFlag {

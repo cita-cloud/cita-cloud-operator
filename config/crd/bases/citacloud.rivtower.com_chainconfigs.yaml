@@ -110,8 +110,9 @@ spec:
               message:
                 description: 详情
                 type: string
-              nodeInfoMap:
-                additionalProperties:
+              nodeInfoList:
+                description: 链下节点信息
+                items:
                   properties:
                     account:
                       description: 账号，不为空
@@ -119,11 +120,18 @@ spec:
                     cluster:
                       description: 所属的k8s集群
                       type: string
+                    creationTimestamp:
+                      description: CreationTimestamp
+                      format: date-time
+                      type: string
                     domain:
                       description: Domain
                       type: string
                     externalIp:
                       description: 节点对外public ip
+                      type: string
+                    name:
+                      description: Name
                       type: string
                     port:
                       description: 节点暴露的端口号
@@ -135,19 +143,24 @@ spec:
                   required:
                   - account
                   type: object
-                description: 链下节点信息
-                type: object
+                type: array
               status:
                 description: 状态
                 type: string
-              validatorAccountMap:
-                additionalProperties:
+              validatorAccountList:
+                description: 共识节点账户信息
+                items:
                   properties:
                     address:
                       type: string
+                    creationTimestamp:
+                      description: CreationTimestamp for sort
+                      format: date-time
+                      type: string
+                    name:
+                      type: string
                   type: object
-                description: 共识节点账户信息
-                type: object
+                type: array
             type: object
         type: object
     served: true

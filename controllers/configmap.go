@@ -43,9 +43,10 @@ func (r *ChainNodeReconciler) ReconcileConfigMap(ctx context.Context, chainConfi
 		logger.Info("the configmap part has not changed, go pass")
 		return false, nil
 	}
-
-	logger.Info("update node configmap...")
-	return true, r.Update(ctx, cur)
+	logger.Info(fmt.Sprintf("should update node [%s/%s] configmap...", chainNode.Namespace, chainNode.Name))
+	return true, nil
+	//logger.Info(fmt.Sprintf("update node [%s/%s] configmap...", chainNode.Namespace, chainNode.Name))
+	//return true, r.Update(ctx, cur)
 }
 
 func (r *ChainNodeReconciler) updateNodeConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, configMap *corev1.ConfigMap) error {
@@ -119,8 +120,10 @@ func (r *ChainNodeReconciler) ReconcileLogConfigMap(ctx context.Context, chainCo
 		return false, nil
 	}
 
-	logger.Info("update log configmap...")
-	return true, r.Update(ctx, cur)
+	logger.Info(fmt.Sprintf("should update node [%s/%s] log configmap...", chainNode.Namespace, chainNode.Name))
+	return true, nil
+	//logger.Info("update log configmap...")
+	//return true, r.Update(ctx, cur)
 }
 
 func (r *ChainNodeReconciler) updateLogConfigMap(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, configMap *corev1.ConfigMap) error {
@@ -157,7 +160,7 @@ func (r *ChainNodeReconciler) checkNetworkConfigChanged(ctx context.Context, cha
 	networkP2p := configContent.Get("network_p2p").(*toml.Tree)
 	peers := networkP2p.GetArray("peers")
 	if reflect.TypeOf(peers).Kind() == reflect.Slice {
-		if (len(chainConfig.Status.NodeInfoMap) - 1) == reflect.ValueOf(peers).Len() {
+		if (len(chainConfig.Status.NodeInfoList) - 1) == reflect.ValueOf(peers).Len() {
 			return false, nil
 		} else {
 			return true, nil
