@@ -147,7 +147,7 @@ func (r *ChainNodeReconciler) updateLogConfigMap(ctx context.Context, chainConfi
 }
 
 // checkNetworkConfigChanged check weather network config changed
-func (r *ChainNodeReconciler) checkNetworkConfigChanged(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (bool, error) {
+func (r *ChainNodeReconciler) checkNetworkConfigSame(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode) (bool, error) {
 	config := &corev1.ConfigMap{}
 	err := r.Get(ctx, types.NamespacedName{Name: GetNodeConfigName(chainNode.Name), Namespace: chainNode.Namespace}, config)
 	if err != nil {

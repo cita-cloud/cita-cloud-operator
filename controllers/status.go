@@ -70,6 +70,16 @@ func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainConfig
 	} else if chainNode.Status.Status == citacloudv1.NodeStopped {
 		chainNode.Status.Status = citacloudv1.NodeStarting
 		r.updateStatefulSetFlag = false
+	} else if chainNode.Status.Status == citacloudv1.NodeWarning {
+		same, err := r.checkNetworkConfigSame(ctx, chainConfig, chainNode)
+		if err != nil {
+			return err
+		}
+		if same {
+			logger.Info("config has been synced, updating chain node status [Running]...")
+			chainNode.Status.Status = citacloudv1.NodeRunning
+			r.updateConfigFlag = false
+		}
 	}
 
 	if r.updateStatefulSetFlag {
@@ -80,6 +90,7 @@ func (r *ChainNodeReconciler) SyncRunningStatus(ctx context.Context, chainConfig
 
 	if r.updateConfigFlag {
 		// chainnode's config modified, set warning status
+		logger.Info("config should be updated, updating chain node status [Warning]...")
 		chainNode.Status.Status = citacloudv1.NodeWarning
 	}
 
