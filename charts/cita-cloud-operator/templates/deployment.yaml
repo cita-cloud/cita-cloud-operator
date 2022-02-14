@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cita-cloud-operator
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/component: cita-cloud-operator
+    {{- include "cita-cloud-operator.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: cita-cloud-operator
+      {{- include "cita-cloud-operator.selectorLabels" . | nindent 6 }}
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: cita-cloud-operator
+        {{- include "cita-cloud-operator.selectorLabels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      serviceAccountName: {{ .Values.serviceAccountName }}
+#      securityContext:
+#        runAsNonRoot: true
+      containers:
+        - command:
+            - /cita-cloud-operator
+          args:
+            - --leader-elect
+          image: {{ .Values.image.registry }}/{{ .Values.image.repository }}/cita-cloud-operator:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          name: operator
+          securityContext:
+            allowPrivilegeEscalation: false
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
