@@ -2,21 +2,30 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-global:
-  # global.registry -- You can specify the image registry.
-  #  registry: docker.io
-  registry: registry.devops.rivtower.com
-  # global.repository -- You can specify the image repository.
-  repository: cita-cloud/operator
+# replicaCount -- replica count
+replicaCount: 1
 
 image:
-  pullPolicy: Always
-  tag: v0.0.1
+  # image.registry -- You can specify the image registry.
+  registry: registry.devops.rivtower.com
+  # image.repository -- You can specify the image repository.
+  repository: cita-cloud/operator
+  # image.pullPolicy -- You can specify the image pull policy.
+  pullPolicy: IfNotPresent
+  # image.tag -- You can specify the image tag.
+  tag: "v0.0.1"
 
 resources:
   limits:
+    # resources.limits.cpu -- cpu limit
     cpu: 500m
+    # resources.limits.memory -- memory limit
     memory: 128Mi
   requests:
+    # resources.requests.cpu -- cpu request
     cpu: 10m
+    # resources.requests.memory -- memory request
     memory: 64Mi
+
+# serviceAccountName -- You can specify the service account.
+serviceAccountName: cita-cloud-operator-sa

@@ -1,11 +1,11 @@
 apiVersion: v2
-name: cita-cloud-operator-proxy
-description: A Helm chart for Cita-Cloud Operator Proxy
+name: cita-cloud-operator
+description: A Helm chart for Cita-Cloud Operator
 type: application
 version: 0.0.1
 appVersion: 0.0.1
 kubeVersion: ">=1.18.0-0"
-home: https://github.com/cita-cloud/operator-proxy
+home: https://github.com/cita-cloud/cita-cloud-operator
 
 maintainers:
   - email: contact@rivtower.com
