@@ -18,7 +18,9 @@
 package controllers
 
 import (
+	"context"
 	"path/filepath"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -38,9 +40,17 @@ import (
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
-var cfg *rest.Config
-var k8sClient client.Client
-var testEnv *envtest.Environment
+var (
+	cfg       *rest.Config
+	k8sClient client.Client // You'll be using this client in your tests.
+	testEnv   *envtest.Environment
+	ctx       context.Context
+	cancel    context.CancelFunc
+)
+
+//var cfg *rest.Config
+//var k8sClient client.Client
+//var testEnv *envtest.Environment
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -52,6 +62,8 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -72,9 +84,66 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme: scheme.Scheme,
+	})
+	Expect(err).ToNot(HaveOccurred())
+
+	// chainconfig reconcile
+	err = (&ChainConfigReconciler{
+		Client: k8sManager.GetClient(),
+		Scheme: k8sManager.GetScheme(),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	// chainnode reconcile
+	err = (&ChainNodeReconciler{
+		Client: k8sManager.GetClient(),
+		Scheme: k8sManager.GetScheme(),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	// set chainNode.spec.chainName index
+	err = k8sManager.GetCache().IndexField(context.Background(), &citacloudv1.ChainNode{}, "spec.chainName", func(o client.Object) []string {
+		var res []string
+		res = append(res, o.(*citacloudv1.ChainNode).Spec.ChainName)
+		return res
+	})
+	Expect(err).ToNot(HaveOccurred())
+
+	// account reconcile
+	err = (&AccountReconciler{
+		Client: k8sManager.GetClient(),
+		Scheme: k8sManager.GetScheme(),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	// set account.spec.chain index
+	err = k8sManager.GetCache().IndexField(context.Background(), &citacloudv1.Account{}, "spec.chain", func(o client.Object) []string {
+		var res []string
+		res = append(res, o.(*citacloudv1.Account).Spec.Chain)
+		return res
+	})
+	Expect(err).ToNot(HaveOccurred())
+
+	// set account.spec.role index
+	err = k8sManager.GetCache().IndexField(context.Background(), &citacloudv1.Account{}, "spec.role", func(o client.Object) []string {
+		var res []string
+		res = append(res, string(o.(*citacloudv1.Account).Spec.Role))
+		return res
+	})
+	Expect(err).ToNot(HaveOccurred())
+
+	go func() {
+		defer GinkgoRecover()
+		err = k8sManager.Start(ctx)
+		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
+	}()
+
 }, 60)
 
 var _ = AfterSuite(func() {
+	cancel()
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
