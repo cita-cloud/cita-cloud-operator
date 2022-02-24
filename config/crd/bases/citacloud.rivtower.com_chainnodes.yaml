@@ -38,6 +38,10 @@ spec:
             properties:
               action:
                 description: 期望的状态
+                enum:
+                - Initialize
+                - Stop
+                - Start
                 type: string
               chainName:
                 description: 对应的链级配置名称

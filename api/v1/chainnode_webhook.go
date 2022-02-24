@@ -22,76 +22,71 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // log is for logging in this package.
-var accountlog = logf.Log.WithName("account-resource")
-var cli client.Client
+var chainnodelog = logf.Log.WithName("chainnode-resource")
 
-func (r *Account) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	// todo: ugly code
-	cli = mgr.GetClient()
+func (r *ChainNode) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-citacloud-rivtower-com-v1-account,mutating=true,failurePolicy=fail,sideEffects=None,groups=citacloud.rivtower.com,resources=accounts,verbs=create;update,versions=v1,name=maccount.kb.io,admissionReviewVersions=v1
+// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-var _ webhook.Defaulter = &Account{}
+//+kubebuilder:webhook:path=/mutate-citacloud-rivtower-com-v1-chainnode,mutating=true,failurePolicy=fail,sideEffects=None,groups=citacloud.rivtower.com,resources=chainnodes,verbs=create;update,versions=v1,name=mchainnode.kb.io,admissionReviewVersions=v1
+
+var _ webhook.Defaulter = &ChainNode{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Account) Default() {
-	accountlog.Info("default", "name", r.Name)
+func (r *ChainNode) Default() {
+	chainnodelog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-citacloud-rivtower-com-v1-account,mutating=false,failurePolicy=fail,sideEffects=None,groups=citacloud.rivtower.com,resources=accounts,verbs=create;update,versions=v1,name=vaccount.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-citacloud-rivtower-com-v1-chainnode,mutating=false,failurePolicy=fail,sideEffects=None,groups=citacloud.rivtower.com,resources=chainnodes,verbs=create;update,versions=v1,name=vchainnode.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &Account{}
+var _ webhook.Validator = &ChainNode{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Account) ValidateCreate() error {
-	accountlog.Info("validate create", "name", r.Name)
+func (r *ChainNode) ValidateCreate() error {
+	chainnodelog.Info("validate create", "name", r.Name)
 	err := r.validate()
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Account) ValidateUpdate(old runtime.Object) error {
-	accountlog.Info("validate update", "name", r.Name)
-	err := r.validate()
-	if err != nil {
-		return err
-	}
+func (r *ChainNode) ValidateUpdate(old runtime.Object) error {
+	chainnodelog.Info("validate update", "name", r.Name)
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Account) ValidateDelete() error {
-	accountlog.Info("validate delete", "name", r.Name)
+func (r *ChainNode) ValidateDelete() error {
+	chainnodelog.Info("validate delete", "name", r.Name)
 	return nil
 }
 
-func (r *Account) validate() error {
-	chainConfig := &ChainConfig{}
+func (r *ChainNode) validate() error {
+	account := &Account{}
 	err := cli.Get(context.Background(), types.NamespacedName{
 		Namespace: r.Namespace,
-		Name:      r.Spec.Chain,
-	}, chainConfig)
+		Name:      r.Spec.Account,
+	}, account)
 	if err != nil {
 		return err
 	}
-	if r.Spec.Role != Admin && r.Spec.Domain == "" {
-		return fmt.Errorf("domain field cann't be empty")
+	if r.Spec.Status != "" {
+		return fmt.Errorf("cann't set ChainNode.Spec.Status field")
 	}
 	return nil
 }

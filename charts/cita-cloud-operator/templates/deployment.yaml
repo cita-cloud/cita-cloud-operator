@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cita-cloud-operator
-  namespace: {{ .Release.Namespace | quote }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/component: cita-cloud-operator
     {{- include "cita-cloud-operator.labels" . | nindent 4 }}
@@ -32,6 +32,19 @@ spec:
           name: operator
           securityContext:
             allowPrivilegeEscalation: false
+          env:
+            - name: ENABLE_WEBHOOKS
+              value: "{{ .Values.enableWebhooks }}"
+          {{- if .Values.enableWebhooks }}
+          ports:
+            - containerPort: 9443
+              name: webhook-server
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /tmp/k8s-webhook-server/serving-certs
+              name: cert
+              readOnly: true
+          {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -46,6 +59,13 @@ spec:
             periodSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.enableWebhooks }}
+      volumes:
+        - name: cert
+          secret:
+            defaultMode: 420
+            secretName: webhook-server-cert
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

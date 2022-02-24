@@ -47,6 +47,10 @@ spec:
                 type: string
               role:
                 description: Role type
+                enum:
+                - Admin
+                - Consensus
+                - Ordinary
                 type: string
             required:
             - chain

@@ -45,9 +45,11 @@ type ChainConfigSpec struct {
 	EnableTLS bool `json:"enableTls,omitempty"`
 
 	// 共识算法
+	// +kubebuilder:validation:Enum=BTF;Raft
 	ConsensusType ConsensusType `json:"consensusType"`
 
 	// 期望的状态
+	// +kubebuilder:validation:Enum=Publicizing;Online
 	Action ChainStatus `json:"action,omitempty"`
 
 	// ImageInfo

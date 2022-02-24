@@ -43,6 +43,7 @@ type ChainNodeSpec struct {
 	StorageSize *int64 `json:"storageSize"`
 
 	// 期望的状态
+	// +kubebuilder:validation:Enum=Initialize;Stop;Start
 	Action NodeAction `json:"action"`
 
 	// ImageInfo

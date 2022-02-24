@@ -141,6 +141,14 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Account")
 			os.Exit(1)
 		}
+		if err = (&citacloudv1.ChainNode{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "ChainNode")
+			os.Exit(1)
+		}
+		if err = (&citacloudv1.ChainConfig{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "ChainConfig")
+			os.Exit(1)
+		}
 	}
 	//+kubebuilder:scaffold:builder
 
