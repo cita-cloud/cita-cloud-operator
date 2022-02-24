@@ -94,6 +94,9 @@ spec:
                 description: 创世块的时间戳
                 format: int64
                 type: integer
+              version:
+                description: Version
+                type: string
             required:
             - blockInterval
             - blockLimit

@@ -54,7 +54,15 @@ type ChainConfigSpec struct {
 
 	// ImageInfo
 	ImageInfo `json:"imageInfo,omitempty"`
+
+	// Version
+	Version string `json:"version,omitempty"`
 }
+
+const (
+	VERSION631 = "v6.3.1"
+	VERSION632 = "v6.3.2"
+)
 
 type ConsensusType string
 
