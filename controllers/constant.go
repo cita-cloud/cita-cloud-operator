@@ -29,7 +29,7 @@ const (
 	AccountVolumeMountPath    = "/mnt"
 	LogConfigVolumeName       = "log-config"
 	NodeConfigVolumeName      = "node-config"
-	NodeConfigVolumeMountPath = "/data"
+	NodeConfigVolumeMountPath = "/etc/cita-cloud.d"
 	DataVolumeName            = "datadir"
 	DataVolumeMountPath       = "/data"
 

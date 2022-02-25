@@ -9,10 +9,10 @@ spec:
   prevhash: "0x0000000000000000000000000000000000000000000000000000000000000000"
   blockInterval: 3
   blockLimit: 100
-  enableTls: false
+  enableTls: true
   consensusType: Raft
-  action: Publicizing
-#  action: Online
+#  action: Publicizing
+  action: Online
   imageInfo:
     pullPolicy: IfNotPresent
   version: v6.3.1

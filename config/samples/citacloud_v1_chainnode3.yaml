@@ -7,7 +7,7 @@ spec:
   nodeInfo:
     cluster: k8s-1
     account: node3-account
-    externalIp: "2.2.2.2"
+    externalIp: "3.3.3.3"
     port: 9630
   chainName: my-chainconfig
   storageSize: 21474836480

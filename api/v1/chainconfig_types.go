@@ -18,6 +18,7 @@
 package v1
 
 import (
+	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -60,8 +61,12 @@ type ChainConfigSpec struct {
 }
 
 const (
-	VERSION631 = "v6.3.1"
-	VERSION632 = "v6.3.2"
+	VERSION631          = "v6.3.1"
+	VERSION632          = "v6.3.2"
+	VERSION632_P2P_BFT  = "v6.3.2_p2p_bft"
+	VERSION632_P2P_RAFT = "v6.3.2_p2p_raft"
+	VERSION632_TLS_BFT  = "v6.3.2_tls_bft"
+	VERSION632_TLS_RAFT = "v6.3.2_tls_raft"
 )
 
 type ConsensusType string
@@ -123,4 +128,52 @@ type ChainConfigList struct {
 
 func init() {
 	SchemeBuilder.Register(&ChainConfig{}, &ChainConfigList{})
+}
+
+func (c *ChainConfig) MergeFromDefaultImageInfo(info ImageInfo) {
+	if c.Spec.PullPolicy != "" {
+		c.Spec.PullPolicy = info.PullPolicy
+	}
+	if c.Spec.NetworkImage == "" {
+		c.Spec.NetworkImage = info.NetworkImage
+	}
+	if c.Spec.ConsensusImage == "" {
+		c.Spec.ConsensusImage = info.ConsensusImage
+	}
+	if c.Spec.ExecutorImage == "" {
+		c.Spec.ExecutorImage = info.ExecutorImage
+	}
+	if c.Spec.StorageImage == "" {
+		c.Spec.StorageImage = info.StorageImage
+	}
+	if c.Spec.ControllerImage == "" {
+		c.Spec.ControllerImage = info.ControllerImage
+	}
+	if c.Spec.KmsImage == "" {
+		c.Spec.KmsImage = info.KmsImage
+	}
+}
+
+func (c *ChainConfig) GetExactVersion() (string, error) {
+	if c.Spec.Version == VERSION632 {
+		if c.Spec.EnableTLS {
+			if c.Spec.ConsensusType == BFT {
+				return VERSION632_TLS_BFT, nil
+			} else if c.Spec.ConsensusType == Raft {
+				return VERSION632_TLS_RAFT, nil
+			} else {
+				return "", fmt.Errorf("cann't get exact version")
+			}
+		} else {
+			if c.Spec.ConsensusType == BFT {
+				return VERSION632_P2P_BFT, nil
+			} else if c.Spec.ConsensusType == Raft {
+				return VERSION632_P2P_RAFT, nil
+			} else {
+				return "", fmt.Errorf("cann't get exact version")
+			}
+		}
+	} else {
+		return "", fmt.Errorf("it's only support v6.3.2")
+	}
 }
