@@ -4,7 +4,7 @@ metadata:
   name: node4-account
   namespace: cita
 spec:
-  chain: my-chainconfig
+  chain: test-chain
   role: Ordinary
   kmsPassword: "123456"
   domain: www.node4.com

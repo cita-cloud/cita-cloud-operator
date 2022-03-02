@@ -31,4 +31,4 @@ resources:
 serviceAccountName: cita-cloud-operator-sa
 
 # enableWebhooks -- Whether to enable webhooks, you should ensure cert-manager has been installed if set true
-enableWebhooks: true
+enableWebhooks: false
