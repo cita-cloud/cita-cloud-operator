@@ -1,0 +1,70 @@
+{{- if .Values.enableWebhooks }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: cita-cloud-operator-validating-webhook-configuration
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/cita-cloud-operator-serving-cert
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: cita-cloud-operator-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /validate-citacloud-rivtower-com-v1-account
+    failurePolicy: Fail
+    name: vaccount.kb.io
+    rules:
+      - apiGroups:
+          - citacloud.rivtower.com
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - accounts
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: cita-cloud-operator-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /validate-citacloud-rivtower-com-v1-chainconfig
+    failurePolicy: Fail
+    name: vchainconfig.kb.io
+    rules:
+      - apiGroups:
+          - citacloud.rivtower.com
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - chainconfigs
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: cita-cloud-operator-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /validate-citacloud-rivtower-com-v1-chainnode
+    failurePolicy: Fail
+    name: vchainnode.kb.io
+    rules:
+      - apiGroups:
+          - citacloud.rivtower.com
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - chainnodes
+    sideEffects: None
+{{- end }}

@@ -208,35 +208,83 @@ func (r *ChainConfigReconciler) SetDefaultSpec(chainConfig *citacloudv1.ChainCon
 		chainConfig.Spec.PullPolicy = corev1.PullIfNotPresent
 	}
 
-	// set default images
-	if chainConfig.Spec.NetworkImage == "" {
-		if chainConfig.Spec.EnableTLS {
-			chainConfig.Spec.NetworkImage = "citacloud/network_tls:v6.3.0"
-		} else {
-			chainConfig.Spec.NetworkImage = "citacloud/network_p2p:v6.3.0"
-		}
+	exactVersion, err := chainConfig.GetExactVersion()
+	if err != nil {
+		return err
 	}
-	if chainConfig.Spec.ConsensusImage == "" {
-		if chainConfig.Spec.ConsensusType == citacloudv1.Raft {
-			chainConfig.Spec.ConsensusImage = "citacloud/consensus_raft:v6.3.0"
-		} else if chainConfig.Spec.ConsensusType == citacloudv1.BFT {
-			chainConfig.Spec.ConsensusImage = "citacloud/consensus_bft:v6.3.0"
-		} else {
-			return fmt.Errorf("mismatched consensus type")
-		}
-	}
-	if chainConfig.Spec.ExecutorImage == "" {
-		chainConfig.Spec.ExecutorImage = "citacloud/executor_evm:v6.3.0"
-	}
-	if chainConfig.Spec.StorageImage == "" {
-		chainConfig.Spec.StorageImage = "citacloud/storage_rocksdb:v6.3.0"
-	}
-	if chainConfig.Spec.ControllerImage == "" {
-		chainConfig.Spec.ControllerImage = "citacloud/controller:v6.3.0"
-	}
-	if chainConfig.Spec.KmsImage == "" {
-		chainConfig.Spec.KmsImage = "citacloud/kms_sm:v6.3.0"
-	}
+	defaultImageInfo := citacloudv1.VERSION_MAP[exactVersion]
+	// merge
+	chainConfig.MergeFromDefaultImageInfo(defaultImageInfo)
+
+	//if chainConfig.Spec.Version == citacloudv1.VERSION631 {
+	//	if chainConfig.Spec.NetworkImage == "" {
+	//		if chainConfig.Spec.EnableTLS {
+	//			chainConfig.Spec.NetworkImage = "citacloud/network_tls:v6.3.0"
+	//		} else {
+	//			chainConfig.Spec.NetworkImage = "citacloud/network_p2p:v6.3.0"
+	//		}
+	//	}
+	//
+	//	if chainConfig.Spec.ConsensusImage == "" {
+	//		if chainConfig.Spec.ConsensusType == citacloudv1.Raft {
+	//			chainConfig.Spec.ConsensusImage = "citacloud/consensus_raft:v6.3.0"
+	//		} else if chainConfig.Spec.ConsensusType == citacloudv1.BFT {
+	//			chainConfig.Spec.ConsensusImage = "citacloud/consensus_bft:v6.3.1"
+	//		} else {
+	//			return fmt.Errorf("mismatched consensus type")
+	//		}
+	//	}
+	//
+	//	if chainConfig.Spec.ExecutorImage == "" {
+	//		chainConfig.Spec.ExecutorImage = "citacloud/executor_evm:v6.3.1"
+	//	}
+	//
+	//	if chainConfig.Spec.StorageImage == "" {
+	//		chainConfig.Spec.StorageImage = "citacloud/storage_rocksdb:v6.3.0"
+	//	}
+	//
+	//	if chainConfig.Spec.ControllerImage == "" {
+	//		chainConfig.Spec.ControllerImage = "citacloud/controller:v6.3.1"
+	//	}
+	//
+	//	if chainConfig.Spec.KmsImage == "" {
+	//		chainConfig.Spec.KmsImage = "citacloud/kms_sm:v6.3.1"
+	//	}
+	//} else if chainConfig.Spec.Version == citacloudv1.VERSION632 {
+	//	if chainConfig.Spec.NetworkImage == "" {
+	//		if chainConfig.Spec.EnableTLS {
+	//			chainConfig.Spec.NetworkImage = "citacloud/network_tls:v6.3.0"
+	//		} else {
+	//			chainConfig.Spec.NetworkImage = "citacloud/network_p2p:v6.3.0"
+	//		}
+	//	}
+	//
+	//	if chainConfig.Spec.ConsensusImage == "" {
+	//		if chainConfig.Spec.ConsensusType == citacloudv1.Raft {
+	//			chainConfig.Spec.ConsensusImage = "citacloud/consensus_raft:v6.3.0"
+	//		} else if chainConfig.Spec.ConsensusType == citacloudv1.BFT {
+	//			chainConfig.Spec.ConsensusImage = "citacloud/consensus_bft:v6.3.2-alpha.1"
+	//		} else {
+	//			return fmt.Errorf("mismatched consensus type")
+	//		}
+	//	}
+	//
+	//	if chainConfig.Spec.ExecutorImage == "" {
+	//		chainConfig.Spec.ExecutorImage = "citacloud/executor_evm:v6.3.2-alpha.1"
+	//	}
+	//
+	//	if chainConfig.Spec.StorageImage == "" {
+	//		chainConfig.Spec.StorageImage = "citacloud/storage_rocksdb:v6.3.0"
+	//	}
+	//
+	//	if chainConfig.Spec.ControllerImage == "" {
+	//		chainConfig.Spec.ControllerImage = "citacloud/controller:v6.3.2-alpha.1"
+	//	}
+	//
+	//	if chainConfig.Spec.KmsImage == "" {
+	//		chainConfig.Spec.KmsImage = "citacloud/kms_sm:v6.3.1"
+	//	}
+	//}
 
 	return nil
 }

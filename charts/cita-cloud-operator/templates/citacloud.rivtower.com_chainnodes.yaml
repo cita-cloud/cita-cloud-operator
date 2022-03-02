@@ -1,13 +1,28 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    {{- if .Values.enableWebhooks }}
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/cita-cloud-operator-serving-cert
+    {{- end }}
     controller-gen.kubebuilder.io/version: v0.7.0
   creationTimestamp: null
   name: chainnodes.citacloud.rivtower.com
 spec:
+  {{- if .Values.enableWebhooks }}
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: cita-cloud-operator-webhook-service
+          namespace: {{ .Release.Namespace | quote }}
+          path: /convert
+          port: 443
+      conversionReviewVersions:
+        - v1
+  {{- end }}
   group: citacloud.rivtower.com
   names:
     kind: ChainNode
@@ -16,118 +31,122 @@ spec:
     singular: chainnode
   scope: Namespaced
   versions:
-  - name: v1
-    schema:
-      openAPIV3Schema:
-        description: ChainNode is the Schema for the chainnodes API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
+    - name: v1
+      schema:
+        openAPIV3Schema:
+          description: ChainNode is the Schema for the chainnodes API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
               of an object. Servers should convert recognized schemas to the latest
               internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
               object represents. Servers may infer this from the endpoint the client
               submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: ChainNodeSpec defines the desired state of ChainNode
-            properties:
-              action:
-                description: 期望的状态
-                type: string
-              chainName:
-                description: 对应的链级配置名称
-                type: string
-              imageInfo:
-                description: ImageInfo
-                properties:
-                  consensusImage:
-                    description: consensus微服务镜像
-                    type: string
-                  controllerImage:
-                    description: controller微服务镜像
-                    type: string
-                  executorImage:
-                    description: executor微服务镜像
-                    type: string
-                  kmsImage:
-                    description: kms微服务镜像
-                    type: string
-                  networkImage:
-                    description: network微服务镜像
-                    type: string
-                  pullPolicy:
-                    description: PullPolicy
-                    type: string
-                  storageImage:
-                    description: storage微服务镜像
-                    type: string
-                type: object
-              logLevel:
-                description: 日志等级
-                type: string
-              nodeInfo:
-                description: 节点信息
-                properties:
-                  account:
-                    description: 账号，不为空
-                    type: string
-                  cluster:
-                    description: 所属的k8s集群
-                    type: string
-                  creationTimestamp:
-                    description: CreationTimestamp
-                    format: date-time
-                    type: string
-                  domain:
-                    description: Domain
-                    type: string
-                  externalIp:
-                    description: 节点对外public ip
-                    type: string
-                  name:
-                    description: Name
-                    type: string
-                  port:
-                    description: 节点暴露的端口号
-                    format: int32
-                    type: integer
-                  status:
-                    description: node status
-                    type: string
-                required:
-                - account
-                type: object
-              storageClassName:
-                description: pvc对应的storage class, 集群中必须存在的storage class
-                type: string
-              storageSize:
-                description: 申请的pvc大小
-                format: int64
-                type: integer
-            required:
-            - action
-            - nodeInfo
-            - storageSize
-            type: object
-          status:
-            description: ChainNodeStatus defines the observed state of ChainNode
-            properties:
-              status:
-                type: string
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: ChainNodeSpec defines the desired state of ChainNode
+              properties:
+                action:
+                  description: 期望的状态
+                  enum:
+                    - Initialize
+                    - Stop
+                    - Start
+                  type: string
+                chainName:
+                  description: 对应的链级配置名称
+                  type: string
+                imageInfo:
+                  description: ImageInfo
+                  properties:
+                    consensusImage:
+                      description: consensus微服务镜像
+                      type: string
+                    controllerImage:
+                      description: controller微服务镜像
+                      type: string
+                    executorImage:
+                      description: executor微服务镜像
+                      type: string
+                    kmsImage:
+                      description: kms微服务镜像
+                      type: string
+                    networkImage:
+                      description: network微服务镜像
+                      type: string
+                    pullPolicy:
+                      description: PullPolicy
+                      type: string
+                    storageImage:
+                      description: storage微服务镜像
+                      type: string
+                  type: object
+                logLevel:
+                  description: 日志等级
+                  type: string
+                nodeInfo:
+                  description: 节点信息
+                  properties:
+                    account:
+                      description: 账号，不为空
+                      type: string
+                    cluster:
+                      description: 所属的k8s集群
+                      type: string
+                    creationTimestamp:
+                      description: CreationTimestamp
+                      format: date-time
+                      type: string
+                    domain:
+                      description: Domain
+                      type: string
+                    externalIp:
+                      description: 节点对外public ip
+                      type: string
+                    name:
+                      description: Name
+                      type: string
+                    port:
+                      description: 节点暴露的端口号
+                      format: int32
+                      type: integer
+                    status:
+                      description: node status
+                      type: string
+                  required:
+                    - account
+                  type: object
+                storageClassName:
+                  description: pvc对应的storage class, 集群中必须存在的storage class
+                  type: string
+                storageSize:
+                  description: 申请的pvc大小
+                  format: int64
+                  type: integer
+              required:
+                - action
+                - nodeInfo
+                - storageSize
+              type: object
+            status:
+              description: ChainNodeStatus defines the observed state of ChainNode
+              properties:
+                status:
+                  type: string
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: { }
 status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: []
-  storedVersions: []
+  conditions: [ ]
+  storedVersions: [ ]

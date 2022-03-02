@@ -1,0 +1,9 @@
+{{- if .Values.enableWebhooks }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: cita-cloud-operator-selfsigned-issuer
+  namespace: {{ .Release.Namespace }}
+spec:
+  selfSigned: {}
+{{- end }}

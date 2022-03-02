@@ -4,7 +4,7 @@ metadata:
   name: node2-account
   namespace: cita
 spec:
-  chain: my-chainconfig
+  chain: test-chain
   role: Consensus
   kmsPassword: "123456"
   domain: www.node2.com

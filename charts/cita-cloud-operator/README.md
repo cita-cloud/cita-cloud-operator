@@ -20,6 +20,7 @@ Kubernetes: `>=1.18.0-0`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| enableWebhooks | bool | `true` | Whether to enable webhooks |
 | image.pullPolicy | string | `"IfNotPresent"` | You can specify the image pull policy. |
 | image.registry | string | `"registry.devops.rivtower.com"` | You can specify the image registry. |
 | image.repository | string | `"cita-cloud/operator"` | You can specify the image repository. |

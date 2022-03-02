@@ -1,0 +1,15 @@
+{{- if .Values.enableWebhooks }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: cita-cloud-operator-webhook-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 9443
+  selector:
+    app: cita-cloud-operator
+    {{- include "cita-cloud-operator.selectorLabels" . | nindent 4 }}
+{{- end }}

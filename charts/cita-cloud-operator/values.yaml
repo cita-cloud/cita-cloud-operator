@@ -11,7 +11,7 @@ image:
   # image.repository -- You can specify the image repository.
   repository: cita-cloud/operator
   # image.pullPolicy -- You can specify the image pull policy.
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   # image.tag -- You can specify the image tag.
   tag: "v0.0.1"
 
@@ -29,3 +29,6 @@ resources:
 
 # serviceAccountName -- You can specify the service account.
 serviceAccountName: cita-cloud-operator-sa
+
+# enableWebhooks -- Whether to enable webhooks, you should ensure cert-manager has been installed if set true
+enableWebhooks: false

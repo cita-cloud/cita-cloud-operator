@@ -51,6 +51,7 @@ type ChainNodeServiceImpl interface {
 	GenerateKmsLogConfig() string
 	GenerateNetworkLogConfig() string
 	GenerateStorageLogConfig() string
+	GenerateConsensusLogConfig() string
 }
 
 func (cns *ChainNodeService) GenerateControllerLogConfig() string {
@@ -189,6 +190,40 @@ root:
     - stdout`, string(cns.ChainNode.Spec.LogLevel))
 }
 
+func (cns *ChainNodeService) GenerateConsensusLogConfig() string {
+	return fmt.Sprintf(`# Scan this file for changes every 30 seconds
+refresh_rate: 30 seconds
+
+appenders:
+# An appender named "stdout" that writes to stdout
+  stdout:
+    kind: console
+
+  journey-service:
+    kind: rolling_file
+    path: "logs/consensus-service.log"
+    policy:
+      # Identifies which policy is to be used. If no kind is specified, it will
+      # default to "compound".
+      kind: compound
+      # The remainder of the configuration is passed along to the policy's
+      # deserializer, and will vary based on the kind of policy.
+      trigger:
+        kind: size
+        limit: 50mb
+      roller:
+        kind: fixed_window
+        base: 1
+        count: 5
+        pattern: "logs/consensus-service.{}.gz"
+
+# Set the default logging level and attach the default appender to the root
+root:
+  level: %s
+  appenders:
+    - stdout`, string(cns.ChainNode.Spec.LogLevel))
+}
+
 func (cns *ChainNodeService) GenerateStorageLogConfig() string {
 	return fmt.Sprintf(`# Scan this file for changes every 30 seconds
 refresh_rate: 30 seconds
@@ -305,6 +340,29 @@ port = %d
 }
 
 func (cns *ChainNodeService) generateConsensus() string {
+	if cns.ChainConfig.Spec.ConsensusType == citacloudv1.BFT {
+		return cns.generateNetworkBft()
+	} else if cns.ChainConfig.Spec.ConsensusType == citacloudv1.Raft {
+		return cns.generateNetworkRaft()
+	} else {
+		// todo bad code
+		return ""
+	}
+}
+
+func (cns *ChainNodeService) generateNetworkBft() string {
+	consensusStr := fmt.Sprintf(`[consensus_bft]
+consensus_port = 50001
+controller_port = 50004
+kms_port = 50005
+network_port = 50000
+node_address = '%s'
+
+`, cns.Account.Status.Address)
+	return consensusStr
+}
+
+func (cns *ChainNodeService) generateNetworkRaft() string {
 	consensusStr := fmt.Sprintf(`[consensus_raft]
 controller_port = 50004
 grpc_listen_port = 50001

@@ -4,7 +4,7 @@ metadata:
   name: admin
   namespace: cita
 spec:
-  chain: my-chainconfig
+  chain: test-chain
   role: Admin
   kmsPassword: "123456"
 

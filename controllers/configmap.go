@@ -159,6 +159,7 @@ func (r *ChainNodeReconciler) updateLogConfigMap(ctx context.Context, chainConfi
 		KmsLogConfigFile:        cnService.GenerateKmsLogConfig(),
 		NetworkLogConfigFile:    cnService.GenerateNetworkLogConfig(),
 		StorageLogConfigFile:    cnService.GenerateStorageLogConfig(),
+		ConsensusLogConfigFile:  cnService.GenerateConsensusLogConfig(),
 	}
 	return nil
 }

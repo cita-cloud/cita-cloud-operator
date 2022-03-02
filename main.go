@@ -96,7 +96,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 设置chainNode索引
+	// set chainNode.spec.chainName index
 	err = mgr.GetCache().IndexField(context.Background(), &citacloudv1.ChainNode{}, "spec.chainName", func(o client.Object) []string {
 		var res []string
 		res = append(res, o.(*citacloudv1.ChainNode).Spec.ChainName)
@@ -115,7 +115,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 设置account的chain索引
+	// set account.spec.chain index
 	err = mgr.GetCache().IndexField(context.Background(), &citacloudv1.Account{}, "spec.chain", func(o client.Object) []string {
 		var res []string
 		res = append(res, o.(*citacloudv1.Account).Spec.Chain)
@@ -125,7 +125,7 @@ func main() {
 		setupLog.Error(err, "set account.spec.chain index field failed", "controller", "Account")
 		os.Exit(1)
 	}
-	// 设置account的role索引
+	// set account.spec.role index
 	err = mgr.GetCache().IndexField(context.Background(), &citacloudv1.Account{}, "spec.role", func(o client.Object) []string {
 		var res []string
 		res = append(res, string(o.(*citacloudv1.Account).Spec.Role))
@@ -136,6 +136,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&citacloudv1.Account{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Account")
+			os.Exit(1)
+		}
+		if err = (&citacloudv1.ChainNode{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "ChainNode")
+			os.Exit(1)
+		}
+		if err = (&citacloudv1.ChainConfig{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "ChainConfig")
+			os.Exit(1)
+		}
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

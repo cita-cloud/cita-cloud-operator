@@ -72,6 +72,24 @@ func (r *ChainNodeReconciler) ReconcileStatefulSet(ctx context.Context, chainCon
 	return true, r.Update(ctx, old)
 }
 
+func getNetworkCmdStr(enableTLS bool) string {
+	if enableTLS {
+		return fmt.Sprintf("network run %s/%s --stdout", NodeConfigVolumeMountPath, NodeConfigFile)
+	} else {
+		return fmt.Sprintf("network run -c %s/%s", NodeConfigVolumeMountPath, NodeConfigFile)
+	}
+}
+
+func getConsensusCmdStr(consensusType citacloudv1.ConsensusType) string {
+	if consensusType == citacloudv1.BFT {
+		return fmt.Sprintf("consensus run -c %s/%s", NodeConfigVolumeMountPath, NodeConfigFile)
+	} else if consensusType == citacloudv1.Raft {
+		return fmt.Sprintf("consensus run %s/%s --stdout", NodeConfigVolumeMountPath, NodeConfigFile)
+	} else {
+		return ""
+	}
+}
+
 func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConfig *citacloudv1.ChainConfig, chainNode *citacloudv1.ChainNode, set *appsv1.StatefulSet) error {
 	replica := int32(1)
 	if chainNode.Spec.Action == citacloudv1.NodeStop {
@@ -85,12 +103,12 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 		logger.Error(err, "node statefulset SetControllerReference error")
 		return err
 	}
-	var networkCmdStr string
-	if chainConfig.Spec.EnableTLS {
-		networkCmdStr = "network run --stdout"
-	} else {
-		networkCmdStr = "network run -p 50000"
-	}
+	//var networkCmdStr string
+	//if chainConfig.Spec.EnableTLS {
+	//	networkCmdStr = fmt.Sprintf("network run %s/%s --stdout", NodeConfigVolumeMountPath, NodeConfigFile)
+	//} else {
+	//	networkCmdStr = "network run -p 50000"
+	//}
 
 	set.Spec = appsv1.StatefulSetSpec{
 		Replicas: pointer.Int32(replica),
@@ -155,7 +173,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						Command: []string{
 							"sh",
 							"-c",
-							networkCmdStr,
+							getNetworkCmdStr(chainConfig.Spec.EnableTLS),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -167,14 +185,13 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							// node config
 							{
 								Name:      NodeConfigVolumeName,
-								SubPath:   NodeConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+								MountPath: NodeConfigVolumeMountPath,
 							},
 							// log config
 							{
 								Name:      LogConfigVolumeName,
 								SubPath:   NetworkLogConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NetworkLogConfigFile),
+								MountPath: fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, NetworkLogConfigFile),
 							},
 						},
 						TerminationMessagePath:   "/dev/termination-log",
@@ -194,7 +211,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						Command: []string{
 							"sh",
 							"-c",
-							"consensus run --stdout",
+							getConsensusCmdStr(chainConfig.Spec.ConsensusType),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -206,8 +223,13 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							// node config
 							{
 								Name:      NodeConfigVolumeName,
-								SubPath:   NodeConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+								MountPath: NodeConfigVolumeMountPath,
+							},
+							// log config
+							{
+								Name:      LogConfigVolumeName,
+								SubPath:   ConsensusLogConfigFile,
+								MountPath: fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, ConsensusLogConfigFile),
 							},
 						},
 						TerminationMessagePath:   "/dev/termination-log",
@@ -227,7 +249,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						Command: []string{
 							"sh",
 							"-c",
-							fmt.Sprintf("executor run -p %d", ExecutorPort),
+							fmt.Sprintf("executor run -c %s/%s -p %d", NodeConfigVolumeMountPath, NodeConfigFile, ExecutorPort),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -239,14 +261,13 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							// node config
 							{
 								Name:      NodeConfigVolumeName,
-								SubPath:   NodeConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+								MountPath: NodeConfigVolumeMountPath,
 							},
 							// log config
 							{
 								Name:      LogConfigVolumeName,
 								SubPath:   ExecutorLogConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, ExecutorLogConfigFile),
+								MountPath: fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, ExecutorLogConfigFile),
 							},
 						},
 						TerminationMessagePath:   "/dev/termination-log",
@@ -266,7 +287,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						Command: []string{
 							"sh",
 							"-c",
-							"storage run -p 50003",
+							fmt.Sprintf("storage run -c %s/%s -p 50003", NodeConfigVolumeMountPath, NodeConfigFile),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -278,14 +299,13 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							// node config
 							{
 								Name:      NodeConfigVolumeName,
-								SubPath:   NodeConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+								MountPath: NodeConfigVolumeMountPath,
 							},
 							// log config
 							{
 								Name:      LogConfigVolumeName,
 								SubPath:   StorageLogConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, StorageLogConfigFile),
+								MountPath: fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, StorageLogConfigFile),
 							},
 						},
 						TerminationMessagePath:   "/dev/termination-log",
@@ -305,7 +325,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						Command: []string{
 							"sh",
 							"-c",
-							"controller run -p 50004",
+							fmt.Sprintf("controller run -c %s/%s -p 50004", NodeConfigVolumeMountPath, NodeConfigFile),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -317,14 +337,13 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							// node config
 							{
 								Name:      NodeConfigVolumeName,
-								SubPath:   NodeConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+								MountPath: NodeConfigVolumeMountPath,
 							},
 							// log config
 							{
 								Name:      LogConfigVolumeName,
 								SubPath:   ControllerLogConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, ControllerLogConfigFile),
+								MountPath: fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, ControllerLogConfigFile),
 							},
 						},
 						TerminationMessagePath:   "/dev/termination-log",
@@ -344,7 +363,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						Command: []string{
 							"sh",
 							"-c",
-							"kms run -p 50005",
+							fmt.Sprintf("kms run -c %s/%s -p 50005", NodeConfigVolumeMountPath, NodeConfigFile),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -356,14 +375,13 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							// node config
 							{
 								Name:      NodeConfigVolumeName,
-								SubPath:   NodeConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+								MountPath: NodeConfigVolumeMountPath,
 							},
 							// log config
 							{
 								Name:      LogConfigVolumeName,
 								SubPath:   KmsLogConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, KmsLogConfigFile),
+								MountPath: fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, KmsLogConfigFile),
 							},
 						},
 						TerminationMessagePath:   "/dev/termination-log",

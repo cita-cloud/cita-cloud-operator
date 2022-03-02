@@ -38,6 +38,9 @@ spec:
             properties:
               action:
                 description: 期望的状态
+                enum:
+                - Publicizing
+                - Online
                 type: string
               blockInterval:
                 description: 出块间隔
@@ -49,6 +52,9 @@ spec:
                 type: integer
               consensusType:
                 description: 共识算法
+                enum:
+                - BFT
+                - Raft
                 type: string
               enableTls:
                 description: 开启tls认证
@@ -88,6 +94,9 @@ spec:
                 description: 创世块的时间戳
                 format: int64
                 type: integer
+              version:
+                description: Version
+                type: string
             required:
             - blockInterval
             - blockLimit

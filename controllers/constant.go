@@ -29,9 +29,10 @@ const (
 	AccountVolumeMountPath    = "/mnt"
 	LogConfigVolumeName       = "log-config"
 	NodeConfigVolumeName      = "node-config"
-	NodeConfigVolumeMountPath = "/data"
+	NodeConfigVolumeMountPath = "/etc/cita-cloud.d"
 	DataVolumeName            = "datadir"
 	DataVolumeMountPath       = "/data"
+	LogConfigVolumeMountPath  = "/data"
 
 	NodeConfigFile          = "config.toml"
 	ControllerLogConfigFile = "controller-log4rs.yaml"
@@ -39,6 +40,7 @@ const (
 	KmsLogConfigFile        = "kms-log4rs.yaml"
 	NetworkLogConfigFile    = "network-log4rs.yaml"
 	StorageLogConfigFile    = "storage-log4rs.yaml"
+	ConsensusLogConfigFile  = "consensus-log4rs.yaml"
 
 	NetworkPort    = 40000
 	ControllerPort = 50004

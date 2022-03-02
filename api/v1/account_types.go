@@ -34,6 +34,7 @@ type AccountSpec struct {
 	// Corresponding chain name
 	Chain string `json:"chain"`
 	// Role type
+	// +kubebuilder:validation:Enum=Admin;Consensus;Ordinary
 	Role Role `json:"role,omitempty"`
 	// kms password
 	KmsPassword string `json:"kmsPassword"`
