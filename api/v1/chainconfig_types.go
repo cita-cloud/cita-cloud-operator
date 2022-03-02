@@ -46,7 +46,7 @@ type ChainConfigSpec struct {
 	EnableTLS bool `json:"enableTls,omitempty"`
 
 	// 共识算法
-	// +kubebuilder:validation:Enum=BTF;Raft
+	// +kubebuilder:validation:Enum=BFT;Raft
 	ConsensusType ConsensusType `json:"consensusType"`
 
 	// 期望的状态
@@ -72,7 +72,7 @@ const (
 type ConsensusType string
 
 const (
-	BFT  ConsensusType = "BTF"
+	BFT  ConsensusType = "BFT"
 	Raft ConsensusType = "Raft"
 )
 
@@ -131,7 +131,7 @@ func init() {
 }
 
 func (c *ChainConfig) MergeFromDefaultImageInfo(info ImageInfo) {
-	if c.Spec.PullPolicy != "" {
+	if c.Spec.PullPolicy == "" {
 		c.Spec.PullPolicy = info.PullPolicy
 	}
 	if c.Spec.NetworkImage == "" {

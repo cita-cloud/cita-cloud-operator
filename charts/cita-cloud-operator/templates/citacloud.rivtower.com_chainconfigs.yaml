@@ -69,7 +69,7 @@ spec:
                 consensusType:
                   description: 共识算法
                   enum:
-                    - BTF
+                    - BFT
                     - Raft
                   type: string
                 enableTls:
