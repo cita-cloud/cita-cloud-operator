@@ -72,21 +72,21 @@ func (r *ChainNodeReconciler) ReconcileStatefulSet(ctx context.Context, chainCon
 	return true, r.Update(ctx, old)
 }
 
-func getNetworkCmdStr(enableTLS bool) string {
+func getNetworkCmdStr(enableTLS bool) []string {
 	if enableTLS {
-		return fmt.Sprintf("network run %s/%s --stdout", NodeConfigVolumeMountPath, NodeConfigFile)
+		return []string{"network", "run", fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile), "--stdout"}
 	} else {
-		return fmt.Sprintf("network run -c %s/%s", NodeConfigVolumeMountPath, NodeConfigFile)
+		return []string{"network", "run", "-c", fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile)}
 	}
 }
 
-func getConsensusCmdStr(consensusType citacloudv1.ConsensusType) string {
+func getConsensusCmdStr(consensusType citacloudv1.ConsensusType) []string {
 	if consensusType == citacloudv1.BFT {
-		return fmt.Sprintf("consensus run -c %s/%s", NodeConfigVolumeMountPath, NodeConfigFile)
+		return []string{"consensus", "run", "-c", fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile)}
 	} else if consensusType == citacloudv1.Raft {
-		return fmt.Sprintf("consensus run %s/%s --stdout", NodeConfigVolumeMountPath, NodeConfigFile)
+		return []string{"consensus", "run", fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile), "--stdout"}
 	} else {
-		return ""
+		return []string{}
 	}
 }
 
@@ -103,12 +103,6 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 		logger.Error(err, "node statefulset SetControllerReference error")
 		return err
 	}
-	//var networkCmdStr string
-	//if chainConfig.Spec.EnableTLS {
-	//	networkCmdStr = fmt.Sprintf("network run %s/%s --stdout", NodeConfigVolumeMountPath, NodeConfigFile)
-	//} else {
-	//	networkCmdStr = "network run -p 50000"
-	//}
 
 	set.Spec = appsv1.StatefulSetSpec{
 		Replicas: pointer.Int32(replica),
@@ -170,11 +164,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 								Name:          "grpc",
 							},
 						},
-						Command: []string{
-							"sh",
-							"-c",
-							getNetworkCmdStr(chainConfig.Spec.EnableTLS),
-						},
+						Command:    getNetworkCmdStr(chainConfig.Spec.EnableTLS),
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
 							// data volume
@@ -208,11 +198,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 								Name:          "grpc",
 							},
 						},
-						Command: []string{
-							"sh",
-							"-c",
-							getConsensusCmdStr(chainConfig.Spec.ConsensusType),
-						},
+						Command:    getConsensusCmdStr(chainConfig.Spec.ConsensusType),
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
 							// data volume
@@ -247,9 +233,10 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							},
 						},
 						Command: []string{
-							"sh",
+							"executor",
+							"run",
 							"-c",
-							fmt.Sprintf("executor run -c %s/%s -p %d", NodeConfigVolumeMountPath, NodeConfigFile, ExecutorPort),
+							fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -285,9 +272,10 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							},
 						},
 						Command: []string{
-							"sh",
+							"storage",
+							"run",
 							"-c",
-							fmt.Sprintf("storage run -c %s/%s -p 50003", NodeConfigVolumeMountPath, NodeConfigFile),
+							fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -323,9 +311,10 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							},
 						},
 						Command: []string{
-							"sh",
+							"controller",
+							"run",
 							"-c",
-							fmt.Sprintf("controller run -c %s/%s -p 50004", NodeConfigVolumeMountPath, NodeConfigFile),
+							fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -361,9 +350,10 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							},
 						},
 						Command: []string{
-							"sh",
+							"kms",
+							"run",
 							"-c",
-							fmt.Sprintf("kms run -c %s/%s -p 50005", NodeConfigVolumeMountPath, NodeConfigFile),
+							fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
