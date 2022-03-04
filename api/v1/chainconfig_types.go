@@ -63,6 +63,7 @@ type ChainConfigSpec struct {
 const (
 	VERSION631          = "v6.3.1"
 	VERSION632          = "v6.3.2"
+	LATEST_VERSION      = VERSION632
 	VERSION632_P2P_BFT  = "v6.3.2_p2p_bft"
 	VERSION632_P2P_RAFT = "v6.3.2_p2p_raft"
 	VERSION632_TLS_BFT  = "v6.3.2_tls_bft"
