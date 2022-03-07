@@ -25,3 +25,4 @@ jobs:
           kubectl create ns cita
           helm install cita-cloud-operator cita-cloud-operator/cita-cloud-operator -n=cita
           kubectl get pod -ncita | grep cita-cloud-operator
+          echo $PATH
