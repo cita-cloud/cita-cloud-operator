@@ -21,4 +21,7 @@ jobs:
           echo "current-context:" $(kubectl config current-context)
           echo "environment-kubeconfig:" ${KUBECONFIG}
           kubectl get sc
-          helm repo list
+          helm repo add cita-cloud-operator https://cita-cloud.github.io/cita-cloud-operator
+          kubectl create ns cita
+          helm install cita-cloud-operator cita-cloud-operator/cita-cloud-operator -n=cita
+          kubectl get pod -ncita | grep cita-cloud-operator
