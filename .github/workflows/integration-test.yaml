@@ -24,5 +24,9 @@ jobs:
           helm repo add cita-cloud-operator https://cita-cloud.github.io/cita-cloud-operator
           kubectl create ns cita
           helm install cita-cloud-operator cita-cloud-operator/cita-cloud-operator -n=cita
-          kubectl get pod -ncita | grep cita-cloud-operator
-          echo $PATH
+          while [[ `kubectl get pod -ncita | grep cita-cloud-operator | awk '{print $3}'` != "Running" ]]
+          do
+            echo "cita-cloud-operator pod is not Running..."
+            sleep 1
+          done
+          echo "cita-cloud-operator pod is Running!"
