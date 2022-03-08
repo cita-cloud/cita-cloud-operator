@@ -16,33 +16,6 @@ jobs:
         uses: helm/kind-action@v1.2.0
       - name: Testing
         run: |
-#          echo "create namespace cita..."
-#          kubectl create ns cita
-#          echo "create namespace cita successful!"
-#
-#          echo "install cita-cloud-operator..."
-#          helm repo add cita-cloud-operator https://cita-cloud.github.io/cita-cloud-operator
-#          helm install cita-cloud-operator cita-cloud-operator/cita-cloud-operator -n=cita
-#          # todo: check
-#          while [[ `kubectl get pod -ncita | grep cita-cloud-operator | awk '{print $3}'` != "Running" ]]
-#          do
-#            echo "cita-cloud-operator pod is not Running..."
-#            sleep 1
-#          done
-#          echo "cita-cloud-operator pod is Running!"
-#
-#          echo "install operator-proxy..."
-#          helm repo add cita-cloud-operator-proxy https://cita-cloud.github.io/operator-proxy
-#          helm install cita-cloud-operator-proxy cita-cloud-operator-proxy/cita-cloud-operator-proxy -n=cita
-#          while [[ `kubectl get pod -ncita | grep cita-cloud-operator-proxy | awk '{print $3}'` != "Running" ]]
-#          do
-#            echo "operator-proxy pod is not Running..."
-#            sleep 1
-#          done
-#          echo "operator-proxy pod is Running!"
-#
-#          echo "install cco-cli..."
-          
           kind load -h
           
           which docker
