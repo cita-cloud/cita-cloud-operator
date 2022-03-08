@@ -19,3 +19,4 @@ jobs:
           docker build -t local:sleep-test -f ./Dockerfile-test .
           kind load docker-image local:sleep-test --name chart-testing
           docker ps
+          docker exec -it chart-testing-control-plane crictl images
