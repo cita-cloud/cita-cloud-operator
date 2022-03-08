@@ -18,3 +18,4 @@ jobs:
         run: |
           kind load -h
           docker ps
+          kubectl get Cluster
