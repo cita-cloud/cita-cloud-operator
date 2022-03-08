@@ -21,4 +21,10 @@ jobs:
           docker ps
           
           kubectl run dev-studio --image docker.io/library/local:sleep-test
-          kubectl get pod
+          
+          while [[ `kubectl get pod | grep dev-studio | awk '{print $3}'` != "Running" ]]
+          do
+          echo "dev-studio pod is not Running..."
+          sleep 1
+          done
+          echo "dev-studio pod is Running!"
