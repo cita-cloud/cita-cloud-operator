@@ -17,4 +17,4 @@ jobs:
       - name: Testing
         run: |
           kind get clusters
-          ls -lh
+          docker build -t local:sleep-test -f ./Dockerfile-test .
