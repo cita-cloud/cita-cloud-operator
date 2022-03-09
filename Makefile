@@ -1,10 +1,12 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= registry.devops.rivtower.com/cita-cloud/operator/cita-cloud-operator:v0.0.1
+DEV_IMG ?= registry.devops.rivtower.com/cita-cloud/operator/cita-cloud-operator:v0.0.1
+IMG ?= citacloud/cita-cloud-operator
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.22
 
-VERSION=$(shell git rev-parse --short HEAD)
+VERSION=$(shell git describe --tags --match 'v*' --always --dirty)
+GIT_COMMIT?=$(shell git rev-parse --short HEAD)
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -71,13 +73,25 @@ build: generate fmt vet ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
-.PHONY: docker-build
-docker-build: ## Build docker image with the manager.
-	docker build --platform linux/amd64 -t ${IMG} . --build-arg version=$(VERSION)
+.PHONY: dev-build
+dev-build: ## Build dev image with the manager.
+	docker build --platform linux/amd64 -t ${DEV_IMG} . --build-arg version=$(GIT_COMMIT)
 
-.PHONY: docker-push
-docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+.PHONY: dev-push
+dev-push: ## Push dev image with the manager.
+	docker push ${DEV_IMG}
+
+.PHONY: image-latest
+image-latest:
+	# Build image with latest stable
+	docker buildx build -t $(IMG):latest --build-arg version=$(GIT_COMMIT) \
+    		--platform linux/amd64,linux/arm64 . --push
+
+.PHONY: image-version
+image-version:
+	[ -z `git status --porcelain` ] || (git --no-pager diff && exit 255)
+	docker buildx build -t $(IMG):$(VERSION) --build-arg version=$(GIT_COMMIT) \
+		--platform linux/amd64,linux/arm64 . --push
 
 ##@ Deployment
 

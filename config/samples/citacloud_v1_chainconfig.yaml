@@ -15,4 +15,4 @@ spec:
 #  action: Online
   imageInfo:
     pullPolicy: IfNotPresent
-  version: v6.3.2
+  version: latest
