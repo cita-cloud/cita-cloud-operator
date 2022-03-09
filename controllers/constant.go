@@ -29,10 +29,11 @@ const (
 	AccountVolumeMountPath    = "/mnt"
 	LogConfigVolumeName       = "log-config"
 	NodeConfigVolumeName      = "node-config"
-	NodeConfigVolumeMountPath = "/etc/cita-cloud.d"
+	NodeConfigVolumeMountPath = "/etc/cita-cloud/config"
 	DataVolumeName            = "datadir"
 	DataVolumeMountPath       = "/data"
-	LogConfigVolumeMountPath  = "/data"
+	LogConfigVolumeMountPath  = "/etc/cita-cloud/log"
+	LogDir                    = DataVolumeMountPath + "/logs"
 
 	NodeConfigFile          = "config.toml"
 	ControllerLogConfigFile = "controller-log4rs.yaml"

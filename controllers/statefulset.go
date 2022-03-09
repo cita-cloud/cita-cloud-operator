@@ -74,17 +74,39 @@ func (r *ChainNodeReconciler) ReconcileStatefulSet(ctx context.Context, chainCon
 
 func getNetworkCmdStr(enableTLS bool) []string {
 	if enableTLS {
-		return []string{"network", "run", fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile), "--stdout"}
+		return []string{
+			"network",
+			"run",
+			"-c",
+			fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+			"--stdout"}
 	} else {
-		return []string{"network", "run", "-c", fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile)}
+		return []string{
+			"network",
+			"run",
+			"-c",
+			fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+			"-l",
+			fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, NetworkLogConfigFile)}
 	}
 }
 
 func getConsensusCmdStr(consensusType citacloudv1.ConsensusType) []string {
 	if consensusType == citacloudv1.BFT {
-		return []string{"consensus", "run", "-c", fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile)}
+		return []string{
+			"consensus",
+			"run",
+			"-c",
+			fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+			"-l",
+			fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, ConsensusLogConfigFile)}
 	} else if consensusType == citacloudv1.Raft {
-		return []string{"consensus", "run", fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile), "--stdout"}
+		return []string{
+			"consensus",
+			"run",
+			"-c",
+			fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+			"--stdout"}
 	} else {
 		return []string{}
 	}
@@ -180,8 +202,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							// log config
 							{
 								Name:      LogConfigVolumeName,
-								SubPath:   NetworkLogConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, NetworkLogConfigFile),
+								MountPath: LogConfigVolumeMountPath,
 							},
 						},
 						TerminationMessagePath:   "/dev/termination-log",
@@ -214,8 +235,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							// log config
 							{
 								Name:      LogConfigVolumeName,
-								SubPath:   ConsensusLogConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, ConsensusLogConfigFile),
+								MountPath: LogConfigVolumeMountPath,
 							},
 						},
 						TerminationMessagePath:   "/dev/termination-log",
@@ -237,6 +257,8 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							"run",
 							"-c",
 							fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+							"-l",
+							fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, ExecutorLogConfigFile),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -253,8 +275,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							// log config
 							{
 								Name:      LogConfigVolumeName,
-								SubPath:   ExecutorLogConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, ExecutorLogConfigFile),
+								MountPath: LogConfigVolumeMountPath,
 							},
 						},
 						TerminationMessagePath:   "/dev/termination-log",
@@ -276,6 +297,8 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							"run",
 							"-c",
 							fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+							"-l",
+							fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, StorageLogConfigFile),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -292,8 +315,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							// log config
 							{
 								Name:      LogConfigVolumeName,
-								SubPath:   StorageLogConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, StorageLogConfigFile),
+								MountPath: LogConfigVolumeMountPath,
 							},
 						},
 						TerminationMessagePath:   "/dev/termination-log",
@@ -315,6 +337,8 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							"run",
 							"-c",
 							fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+							"-l",
+							fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, ControllerLogConfigFile),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -331,8 +355,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							// log config
 							{
 								Name:      LogConfigVolumeName,
-								SubPath:   ControllerLogConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, ControllerLogConfigFile),
+								MountPath: LogConfigVolumeMountPath,
 							},
 						},
 						TerminationMessagePath:   "/dev/termination-log",
@@ -354,6 +377,8 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							"run",
 							"-c",
 							fmt.Sprintf("%s/%s", NodeConfigVolumeMountPath, NodeConfigFile),
+							"-l",
+							fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, KmsLogConfigFile),
 						},
 						WorkingDir: DataVolumeMountPath,
 						VolumeMounts: []corev1.VolumeMount{
@@ -370,8 +395,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							// log config
 							{
 								Name:      LogConfigVolumeName,
-								SubPath:   KmsLogConfigFile,
-								MountPath: fmt.Sprintf("%s/%s", LogConfigVolumeMountPath, KmsLogConfigFile),
+								MountPath: LogConfigVolumeMountPath,
 							},
 						},
 						TerminationMessagePath:   "/dev/termination-log",

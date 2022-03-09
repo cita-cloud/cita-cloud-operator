@@ -65,7 +65,7 @@ appenders:
 
   journey-service:
     kind: rolling_file
-    path: "logs/controller-service.log"
+    path: "%s/controller-service.log"
     policy:
       # Identifies which policy is to be used. If no kind is specified, it will
       # default to "compound".
@@ -79,13 +79,14 @@ appenders:
         kind: fixed_window
         base: 1
         count: 5
-        pattern: "logs/controller-service.{}.gz"
+        pattern: "%s/controller-service.{}.gz"
 
 # Set the default logging level and attach the default appender to the root
 root:
   level: %s
   appenders:
-    - stdout`, string(cns.ChainNode.Spec.LogLevel))
+    - stdout
+    - journey-service`, LogDir, LogDir, string(cns.ChainNode.Spec.LogLevel))
 }
 
 func (cns *ChainNodeService) GenerateExecutorLogConfig() string {
@@ -99,7 +100,7 @@ appenders:
 
   journey-service:
     kind: rolling_file
-    path: "logs/executor-service.log"
+    path: "%s/executor-service.log"
     policy:
       # Identifies which policy is to be used. If no kind is specified, it will
       # default to "compound".
@@ -113,13 +114,14 @@ appenders:
         kind: fixed_window
         base: 1
         count: 5
-        pattern: "logs/executor-service.{}.gz"
+        pattern: "%s/executor-service.{}.gz"
 
 # Set the default logging level and attach the default appender to the root
 root:
   level: %s
   appenders:
-    - stdout`, string(cns.ChainNode.Spec.LogLevel))
+    - stdout
+    - journey-service`, LogDir, LogDir, string(cns.ChainNode.Spec.LogLevel))
 }
 
 func (cns *ChainNodeService) GenerateKmsLogConfig() string {
@@ -133,7 +135,7 @@ appenders:
 
   journey-service:
     kind: rolling_file
-    path: "logs/kms-service.log"
+    path: "%s/kms-service.log"
     policy:
       # Identifies which policy is to be used. If no kind is specified, it will
       # default to "compound".
@@ -147,13 +149,14 @@ appenders:
         kind: fixed_window
         base: 1
         count: 5
-        pattern: "logs/kms-service.{}.gz"
+        pattern: "%s/kms-service.{}.gz"
 
 # Set the default logging level and attach the default appender to the root
 root:
   level: %s
   appenders:
-    - stdout`, string(cns.ChainNode.Spec.LogLevel))
+    - stdout
+    - journey-service`, LogDir, LogDir, string(cns.ChainNode.Spec.LogLevel))
 }
 
 func (cns *ChainNodeService) GenerateNetworkLogConfig() string {
@@ -167,7 +170,7 @@ appenders:
 
   journey-service:
     kind: rolling_file
-    path: "logs/network-service.log"
+    path: "%s/network-service.log"
     policy:
       # Identifies which policy is to be used. If no kind is specified, it will
       # default to "compound".
@@ -181,13 +184,14 @@ appenders:
         kind: fixed_window
         base: 1
         count: 5
-        pattern: "logs/network-service.{}.gz"
+        pattern: "%s/network-service.{}.gz"
 
 # Set the default logging level and attach the default appender to the root
 root:
   level: %s
   appenders:
-    - stdout`, string(cns.ChainNode.Spec.LogLevel))
+    - stdout
+    - journey-service`, LogDir, LogDir, string(cns.ChainNode.Spec.LogLevel))
 }
 
 func (cns *ChainNodeService) GenerateConsensusLogConfig() string {
@@ -201,7 +205,7 @@ appenders:
 
   journey-service:
     kind: rolling_file
-    path: "logs/consensus-service.log"
+    path: "%s/consensus-service.log"
     policy:
       # Identifies which policy is to be used. If no kind is specified, it will
       # default to "compound".
@@ -215,13 +219,14 @@ appenders:
         kind: fixed_window
         base: 1
         count: 5
-        pattern: "logs/consensus-service.{}.gz"
+        pattern: "%s/consensus-service.{}.gz"
 
 # Set the default logging level and attach the default appender to the root
 root:
   level: %s
   appenders:
-    - stdout`, string(cns.ChainNode.Spec.LogLevel))
+    - stdout
+    - journey-service`, LogDir, LogDir, string(cns.ChainNode.Spec.LogLevel))
 }
 
 func (cns *ChainNodeService) GenerateStorageLogConfig() string {
@@ -235,7 +240,7 @@ appenders:
 
   journey-service:
     kind: rolling_file
-    path: "logs/storage-service.log"
+    path: "%s/storage-service.log"
     policy:
       # Identifies which policy is to be used. If no kind is specified, it will
       # default to "compound".
@@ -249,13 +254,14 @@ appenders:
         kind: fixed_window
         base: 1
         count: 5
-        pattern: "logs/storage-service.{}.gz"
+        pattern: "%s/storage-service.{}.gz"
 
 # Set the default logging level and attach the default appender to the root
 root:
   level: %s
   appenders:
-    - stdout`, string(cns.ChainNode.Spec.LogLevel))
+    - stdout
+    - journey-service`, LogDir, LogDir, string(cns.ChainNode.Spec.LogLevel))
 }
 
 func (cns *ChainNodeService) GenerateNodeConfig() string {
