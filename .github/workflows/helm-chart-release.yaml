@@ -3,11 +3,8 @@ name: Release Helm Charts
 # Controls when the action will run.
 on:
   push:
-    tags:
-      - v*
-  pull_request:
-    tags:
-      - v*
+    branches:
+      - master
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 

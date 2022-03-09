@@ -20,8 +20,8 @@ package v1
 import corev1 "k8s.io/api/core/v1"
 
 var VERSION_MAP = map[string]ImageInfo{
-	// v6.3.2
-	VERSION632_TLS_BFT: {
+	// v6.3.3
+	VERSION633_TLS_BFT: {
 		PullPolicy:      corev1.PullIfNotPresent,
 		NetworkImage:    "citacloud/network_tls:v6.3.0",
 		ConsensusImage:  "citacloud/consensus_bft:v6.3.2-alpha.1",
@@ -30,7 +30,7 @@ var VERSION_MAP = map[string]ImageInfo{
 		ControllerImage: "citacloud/controller:v6.3.2-alpha.1",
 		KmsImage:        "citacloud/kms_sm:v6.3.1",
 	},
-	VERSION632_TLS_RAFT: {
+	VERSION633_TLS_RAFT: {
 		PullPolicy:      corev1.PullIfNotPresent,
 		NetworkImage:    "citacloud/network_tls:v6.3.0",
 		ConsensusImage:  "citacloud/consensus_raft:v6.3.0",
@@ -39,7 +39,7 @@ var VERSION_MAP = map[string]ImageInfo{
 		ControllerImage: "citacloud/controller:v6.3.2-alpha.1",
 		KmsImage:        "citacloud/kms_sm:v6.3.1",
 	},
-	VERSION632_P2P_BFT: {
+	VERSION633_P2P_BFT: {
 		PullPolicy:      corev1.PullIfNotPresent,
 		NetworkImage:    "citacloud/network_p2p:v6.3.0",
 		ConsensusImage:  "citacloud/consensus_bft:v6.3.2-alpha.1",
@@ -48,7 +48,7 @@ var VERSION_MAP = map[string]ImageInfo{
 		ControllerImage: "citacloud/controller:v6.3.2-alpha.1",
 		KmsImage:        "citacloud/kms_sm:v6.3.1",
 	},
-	VERSION632_P2P_RAFT: {
+	VERSION633_P2P_RAFT: {
 		PullPolicy:      corev1.PullIfNotPresent,
 		NetworkImage:    "citacloud/network_p2p:v6.3.0",
 		ConsensusImage:  "citacloud/consensus_raft:v6.3.0",
@@ -56,5 +56,43 @@ var VERSION_MAP = map[string]ImageInfo{
 		StorageImage:    "citacloud/storage_rocksdb:v6.3.0",
 		ControllerImage: "citacloud/controller:v6.3.2-alpha.1",
 		KmsImage:        "citacloud/kms_sm:v6.3.1",
+	},
+
+	// latest
+	LATEST_TLS_BFT: {
+		PullPolicy:      corev1.PullIfNotPresent,
+		NetworkImage:    "citacloud/network_tls:latest",
+		ConsensusImage:  "citacloud/consensus_bft:latest",
+		ExecutorImage:   "citacloud/executor_evm:latest",
+		StorageImage:    "citacloud/storage_rocksdb:latest",
+		ControllerImage: "citacloud/controller:latest",
+		KmsImage:        "citacloud/kms_sm:latest",
+	},
+	LATEST_TLS_RAFT: {
+		PullPolicy:      corev1.PullIfNotPresent,
+		NetworkImage:    "citacloud/network_tls:latest",
+		ConsensusImage:  "citacloud/consensus_raft:latest",
+		ExecutorImage:   "citacloud/executor_evm:latest",
+		StorageImage:    "citacloud/storage_rocksdb:latest",
+		ControllerImage: "citacloud/controller:latest",
+		KmsImage:        "citacloud/kms_sm:latest",
+	},
+	LATEST_P2P_BFT: {
+		PullPolicy:      corev1.PullIfNotPresent,
+		NetworkImage:    "citacloud/network_p2p:latest",
+		ConsensusImage:  "citacloud/consensus_bft:latest",
+		ExecutorImage:   "citacloud/executor_evm:latest",
+		StorageImage:    "citacloud/storage_rocksdb:latest",
+		ControllerImage: "citacloud/controller:latest",
+		KmsImage:        "citacloud/kms_sm:latest",
+	},
+	LATEST_P2P_RAFT: {
+		PullPolicy:      corev1.PullIfNotPresent,
+		NetworkImage:    "citacloud/network_p2p:latest",
+		ConsensusImage:  "citacloud/consensus_raft:latest",
+		ExecutorImage:   "citacloud/executor_evm:latest",
+		StorageImage:    "citacloud/storage_rocksdb:latest",
+		ControllerImage: "citacloud/controller:latest",
+		KmsImage:        "citacloud/kms_sm:latest",
 	},
 }

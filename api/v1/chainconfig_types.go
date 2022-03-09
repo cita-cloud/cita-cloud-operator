@@ -57,17 +57,21 @@ type ChainConfigSpec struct {
 	ImageInfo `json:"imageInfo,omitempty"`
 
 	// Version
+	// +kubebuilder:default:=latest
 	Version string `json:"version,omitempty"`
 }
 
 const (
-	VERSION631          = "v6.3.1"
-	VERSION632          = "v6.3.2"
-	LATEST_VERSION      = VERSION632
-	VERSION632_P2P_BFT  = "v6.3.2_p2p_bft"
-	VERSION632_P2P_RAFT = "v6.3.2_p2p_raft"
-	VERSION632_TLS_BFT  = "v6.3.2_tls_bft"
-	VERSION632_TLS_RAFT = "v6.3.2_tls_raft"
+	VERSION633          = "v6.3.3"
+	LATEST_VERSION      = "latest"
+	VERSION633_P2P_BFT  = "v6.3.3_p2p_bft"
+	VERSION633_P2P_RAFT = "v6.3.3_p2p_raft"
+	VERSION633_TLS_BFT  = "v6.3.3_tls_bft"
+	VERSION633_TLS_RAFT = "v6.3.3_tls_raft"
+	LATEST_P2P_BFT      = "latest_p2p_bft"
+	LATEST_P2P_RAFT     = "latest_p2p_raft"
+	LATEST_TLS_BFT      = "latest_tls_bft"
+	LATEST_TLS_RAFT     = "latest_tls_raft"
 )
 
 type ConsensusType string
@@ -156,25 +160,43 @@ func (c *ChainConfig) MergeFromDefaultImageInfo(info ImageInfo) {
 }
 
 func (c *ChainConfig) GetExactVersion() (string, error) {
-	if c.Spec.Version == VERSION632 {
+	if c.Spec.Version == VERSION633 {
 		if c.Spec.EnableTLS {
 			if c.Spec.ConsensusType == BFT {
-				return VERSION632_TLS_BFT, nil
+				return VERSION633_TLS_BFT, nil
 			} else if c.Spec.ConsensusType == Raft {
-				return VERSION632_TLS_RAFT, nil
+				return VERSION633_TLS_RAFT, nil
 			} else {
 				return "", fmt.Errorf("cann't get exact version")
 			}
 		} else {
 			if c.Spec.ConsensusType == BFT {
-				return VERSION632_P2P_BFT, nil
+				return VERSION633_P2P_BFT, nil
 			} else if c.Spec.ConsensusType == Raft {
-				return VERSION632_P2P_RAFT, nil
+				return VERSION633_P2P_RAFT, nil
+			} else {
+				return "", fmt.Errorf("cann't get exact version")
+			}
+		}
+	} else if c.Spec.Version == LATEST_VERSION {
+		if c.Spec.EnableTLS {
+			if c.Spec.ConsensusType == BFT {
+				return LATEST_TLS_BFT, nil
+			} else if c.Spec.ConsensusType == Raft {
+				return LATEST_TLS_RAFT, nil
+			} else {
+				return "", fmt.Errorf("cann't get exact version")
+			}
+		} else {
+			if c.Spec.ConsensusType == BFT {
+				return LATEST_P2P_BFT, nil
+			} else if c.Spec.ConsensusType == Raft {
+				return LATEST_P2P_RAFT, nil
 			} else {
 				return "", fmt.Errorf("cann't get exact version")
 			}
 		}
 	} else {
-		return "", fmt.Errorf("it's only support v6.3.2")
+		return "", fmt.Errorf("cann't find supported version")
 	}
 }
