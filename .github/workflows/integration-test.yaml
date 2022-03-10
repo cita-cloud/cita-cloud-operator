@@ -24,7 +24,9 @@ jobs:
           
           while [[ `kubectl get pod | grep dev-studio | awk '{print $3}'` != "Running" ]]
           do
-          echo "dev-studio pod is not Running..."
-          sleep 1
+            echo "dev-studio pod is not Running..."
+            sleep 1
           done
           echo "dev-studio pod is Running!"
+          
+          whoani

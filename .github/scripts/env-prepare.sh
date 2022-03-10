@@ -18,109 +18,44 @@
 
 set -o errexit
 
-#times=300
-#while [ $times -ge 1 ]
-#do
-#  if [ `kubectl get pod -ncita | grep cita-cloud-operator | awk '{print $3}'` == "Running" ];then
-#    break
-#  else
-#    echo "cita-cloud-operator pod is not Running..."
-#    let times--
-#    sleep 1
-#  fi
-#done
-#if [ $times -lt 1 ]; then
-#  echo "wait timeout for cita-cloud-operator"
-#  exit 1
-#else
-#  echo "cita-cloud-operator is Running"
-#fi
-#
-#times=300
-#while [ $times -ge 1 ]
-#do
-#  if [ `kubectl get pod -ncita | grep cita-cloud-operator-proxy | awk '{print $3}'` == "Running" ];then
-#    break
-#  else
-#    echo "cita-cloud-operator-proxy pod is not Running..."
-#    let times--
-#    sleep 1
-#  fi
-#done
-#if [ $times -lt 1 ]; then
-#  echo "wait timeout for cita-cloud-operator-proxy"
-#  exit 1
-#else
-#  echo "cita-cloud-operator-proxy is Running"
-#fi
-#
-#endpoint=`kubectl get  svc cita-cloud-operator-proxy -ncita -ojson | jq '.spec.ports[0].nodePort'`
+times=300
+while [ $times -ge 1 ]
+do
+  if [ `kubectl get pod -ncita | grep cita-cloud-operator | awk '{print $3}'` == "Running" ];then
+    break
+  else
+    echo "cita-cloud-operator pod is not Running..."
+    let times--
+    sleep 1
+  fi
+done
+if [ $times -lt 1 ]; then
+  echo "wait timeout for cita-cloud-operator"
+  exit 1
+else
+  echo "cita-cloud-operator is Running"
+fi
 
-export OWNER=cita-cloud
-export REPO=operator-proxy
-export BIN_LOCATION="/usr/local/bin"
+times=300
+while [ $times -ge 1 ]
+do
+  if [ `kubectl get pod -ncita | grep cita-cloud-operator-proxy | awk '{print $3}'` == "Running" ];then
+    break
+  else
+    echo "cita-cloud-operator-proxy pod is not Running..."
+    let times--
+    sleep 1
+  fi
+done
+if [ $times -lt 1 ]; then
+  echo "wait timeout for cita-cloud-operator-proxy"
+  exit 1
+else
+  echo "cita-cloud-operator-proxy is Running"
+fi
 
-cli_version=$(curl -s https://api.github.com/repos/$OWNER/$REPO/releases/latest | grep 'tag_name' | cut -d '"' -f 4 | tr -d 'v')
+endpoint=`kubectl get  svc cita-cloud-operator-proxy -ncita -ojson | jq '.spec.ports[0].nodePort'`
 
-getPackage() {
-    uname=$(uname)
-    userid=$(id -u)
+curl -sLS https://raw.githubusercontent.com/cita-cloud/operator-proxy/master/install-cli.sh | sh
 
-    suffix=""
-    case $uname in
-    "Darwin")
-        arch=$(uname -m)
-        case $arch in
-        "x86_64")
-        suffix="darwin-adm64"
-        ;;
-        esac
-        case $arch in
-        "arm64")
-        suffix="darwin-arm64"
-        ;;
-        esac
-    ;;
-
-    "MINGW"*)
-    suffix=".exe"
-    BINLOCATION="$HOME/bin"
-    mkdir -p $BINLOCATION
-
-    ;;
-    "Linux")
-        arch=$(uname -m)
-        echo $arch
-        case $arch in
-        "x86_64")
-        suffix="linux-amd64"
-        ;;
-        esac
-        case $arch in
-        "aarch64")
-        suffix="linux-arm64"
-        ;;
-        esac
-    ;;
-    esac
-
-    targetFile="/tmp/cco-cli-$cli_version-$suffix.tar.gz"
-
-    if [ -e "$targetFile" ]; then
-        rm "$targetFile"
-    fi
-
-    url=https://github.com/$OWNER/$REPO/releases/download/v$cli_version/cco-cli-$cli_version-$suffix.tar.gz
-    echo "Downloading package $url as $targetFile"
-
-    curl -sSL $url --output "$targetFile"
-
-    if [ "$?" = "0" ]; then
-      echo "Download complete."
-      tar -zxf $targetFile
-      chmod +x cco-cli
-      mv cco-cli $BIN_LOCATION
-    fi
-}
-
-getPackage
+export OPERATOR_PROXY_ENDPOINT=127.0.0.1:$endpoint
