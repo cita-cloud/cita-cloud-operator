@@ -16,23 +16,4 @@ jobs:
         uses: helm/kind-action@v1.2.0
       - name: Testing
         run: |
-          docker build -t local:sleep-test -f ./Dockerfile-test .
-          kind load docker-image local:sleep-test --name chart-testing
-          docker ps
-          
-          kubectl run dev-studio --image docker.io/library/local:sleep-test
-          
-          while [[ `kubectl get pod | grep dev-studio | awk '{print $3}'` != "Running" ]]
-          do
-            echo "dev-studio pod is not Running..."
-            sleep 1
-          done
-          echo "dev-studio pod is Running!"
-          
-          curl -sSL https://github.com/cita-cloud/operator-proxy/releases/download/v0.0.1-alpha/cco-cli-0.0.1-alpha-linux-amd64 --output /tmp/cco-cli
-          
-          chmod +x /tmp/cco-cli
-          
-          sudo mv /tmp/cco-cli /usr/local/bin
-          
-          cco-cli -h
+          kubectl get node -owide

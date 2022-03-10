@@ -56,6 +56,8 @@ fi
 
 endpoint=`kubectl get  svc cita-cloud-operator-proxy -ncita -ojson | jq '.spec.ports[0].nodePort'`
 
-curl -sLS https://raw.githubusercontent.com/cita-cloud/operator-proxy/master/install-cli.sh | sh
-
+curl -sSL https://github.com/cita-cloud/operator-proxy/releases/download/v0.0.1-alpha/cco-cli-0.0.1-alpha-linux-amd64 --output /tmp/cco-cli
+chmod +x /tmp/cco-cli
+sudo mv /tmp/cco-cli /usr/local/bin
 export OPERATOR_PROXY_ENDPOINT=127.0.0.1:$endpoint
+cco-cli -h
