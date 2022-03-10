@@ -29,4 +29,4 @@ jobs:
           done
           echo "dev-studio pod is Running!"
           
-          whoami
+          curl -sLS https://raw.githubusercontent.com/cita-cloud/operator-proxy/master/install-cli.sh | sudo sh
