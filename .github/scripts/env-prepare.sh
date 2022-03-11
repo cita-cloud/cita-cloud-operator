@@ -61,3 +61,4 @@ chmod +x /tmp/cco-cli
 sudo mv /tmp/cco-cli /usr/local/bin
 export OPERATOR_PROXY_ENDPOINT=127.0.0.1:$endpoint
 cco-cli -h
+telnet 127.0.0.1 $endpoint

@@ -15,5 +15,4 @@ jobs:
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1.2.0
       - name: Testing
-        run: |
-          kubectl get node -owide
+        run: ${GITHUB_WORKSPACE}/.github/scripts/env-prepare.sh
