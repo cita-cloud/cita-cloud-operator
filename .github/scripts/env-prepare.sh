@@ -18,10 +18,18 @@
 
 set -o errexit
 
+echo "create namespace cita..."
+kubectl create ns cita
+echo "create namespace cita successful!"
+
+echo "install cita-cloud-operator..."
+helm repo add cita-cloud-operator https://cita-cloud.github.io/cita-cloud-operator
+helm install cita-cloud-operator cita-cloud-operator/cita-cloud-operator -n=cita
+
 times=300
 while [ $times -ge 1 ]
 do
-  if [ `kubectl get pod -ncita | grep cita-cloud-operator | awk '{print $3}'` = "Running" ]; then
+  if [ `kubectl get pod -ncita | grep cita-cloud-operator | awk '{print $3}'` == "Running" ]; then
     break
   else
     echo "cita-cloud-operator pod is not Running..."
@@ -36,10 +44,14 @@ else
   echo "cita-cloud-operator is Running"
 fi
 
+echo "install operator-proxy..."
+helm repo add cita-cloud-operator-proxy https://cita-cloud.github.io/operator-proxy
+helm install cita-cloud-operator-proxy cita-cloud-operator-proxy/cita-cloud-operator-proxy -n=cita
+
 times=300
 while [ $times -ge 1 ]
 do
-  if [ `kubectl get pod -ncita | grep cita-cloud-operator-proxy | awk '{print $3}'` = "Running" ]; then
+  if [ `kubectl get pod -ncita | grep cita-cloud-operator-proxy | awk '{print $3}'` == "Running" ];then
     break
   else
     echo "cita-cloud-operator-proxy pod is not Running..."
