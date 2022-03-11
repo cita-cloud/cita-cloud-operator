@@ -21,7 +21,7 @@ set -o errexit
 times=300
 while [ $times -ge 1 ]
 do
-  if [ `kubectl get pod -ncita | grep cita-cloud-operator | awk '{print $3}'` == "Running" ];then
+  if [ `kubectl get pod -ncita | grep cita-cloud-operator | awk '{print $3}'` = "Running" ]; then
     break
   else
     echo "cita-cloud-operator pod is not Running..."
@@ -39,7 +39,7 @@ fi
 times=300
 while [ $times -ge 1 ]
 do
-  if [ `kubectl get pod -ncita | grep cita-cloud-operator-proxy | awk '{print $3}'` == "Running" ];then
+  if [ `kubectl get pod -ncita | grep cita-cloud-operator-proxy | awk '{print $3}'` = "Running" ]; then
     break
   else
     echo "cita-cloud-operator-proxy pod is not Running..."
