@@ -36,6 +36,10 @@ spec:
           spec:
             description: AccountSpec defines the desired state of Account
             properties:
+              address:
+                description: Address if address set, controller will not generate
+                  a new account address
+                type: string
               chain:
                 description: Corresponding chain name
                 type: string

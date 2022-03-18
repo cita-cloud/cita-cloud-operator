@@ -7,4 +7,5 @@ spec:
   chain: test-chain
   role: Admin
   kmsPassword: "123456"
+  address: ae069e1925a1dad2a1f4c7034d87258dfd9b6532
 
