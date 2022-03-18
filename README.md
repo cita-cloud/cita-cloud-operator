@@ -23,7 +23,7 @@ kubectl create ns cita
 ```shell
 helm install cita-cloud-operator cita-cloud-operator/cita-cloud-operator -n=cita
 ```
-If you want to enable the webhook function, you can use the following command, provided that the controller-manager has been installed in your k8s cluster
+If you want to enable the webhook function, you can use the following command, provided that the [cert-manager](https://cert-manager.io/docs/installation/) has been installed in your k8s cluster
 ```shell
 helm install cita-cloud-operator cita-cloud-operator/cita-cloud-operator --set enableWebhooks=true -n=cita 
 ```
