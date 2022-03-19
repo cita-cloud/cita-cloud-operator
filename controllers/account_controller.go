@@ -73,46 +73,50 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// check account
 	var accountAddress string
-	accountConfigMap := &corev1.ConfigMap{}
-	err := r.Get(ctx, types.NamespacedName{Name: GetAccountConfigmap(account.Name), Namespace: account.Namespace}, accountConfigMap)
-	if err != nil && errors.IsNotFound(err) {
-		keyId, address, err := cc.CreateAccount(account.Spec.KmsPassword)
-		accountAddress = address
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-
-		accountConfigMap.ObjectMeta = metav1.ObjectMeta{
-			Name:      GetAccountConfigmap(account.Name),
-			Namespace: account.Namespace,
-			Labels:    LabelsForChain(chainConfig.Name),
-		}
-		accountConfigMap.Data = map[string]string{
-			"keyId":   keyId,
-			"address": accountAddress,
-		}
-
-		kmsDb, err := cc.ReadKmsDb(accountAddress)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		accountConfigMap.BinaryData = map[string][]byte{
-			"kms.db": kmsDb,
-		}
-
-		// set ownerReference
-		_ = ctrl.SetControllerReference(account, accountConfigMap, r.Scheme)
-		// create chain secret
-		err = r.Create(ctx, accountConfigMap)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		logger.Info(fmt.Sprintf("account configmap %s/%s created", account.Name, account.Namespace))
-	} else if err != nil {
-		logger.Error(err, "failed to get account address configmap")
-		return ctrl.Result{}, err
+	if account.Spec.Address != "" {
+		accountAddress = account.Spec.Address
 	} else {
-		accountAddress = accountConfigMap.Data["address"]
+		accountConfigMap := &corev1.ConfigMap{}
+		err := r.Get(ctx, types.NamespacedName{Name: GetAccountConfigmap(account.Name), Namespace: account.Namespace}, accountConfigMap)
+		if err != nil && errors.IsNotFound(err) {
+			keyId, address, err := cc.CreateAccount(account.Spec.KmsPassword)
+			accountAddress = address
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+
+			accountConfigMap.ObjectMeta = metav1.ObjectMeta{
+				Name:      GetAccountConfigmap(account.Name),
+				Namespace: account.Namespace,
+				Labels:    LabelsForChain(chainConfig.Name),
+			}
+			accountConfigMap.Data = map[string]string{
+				"keyId":   keyId,
+				"address": accountAddress,
+			}
+
+			kmsDb, err := cc.ReadKmsDb(accountAddress)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			accountConfigMap.BinaryData = map[string][]byte{
+				"kms.db": kmsDb,
+			}
+
+			// set ownerReference
+			_ = ctrl.SetControllerReference(account, accountConfigMap, r.Scheme)
+			// create chain secret
+			err = r.Create(ctx, accountConfigMap)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			logger.Info(fmt.Sprintf("account configmap %s/%s created", account.Name, account.Namespace))
+		} else if err != nil {
+			logger.Error(err, "failed to get account address configmap")
+			return ctrl.Result{}, err
+		} else {
+			accountAddress = accountConfigMap.Data["address"]
+		}
 	}
 
 	// Generate certificate directly
@@ -120,7 +124,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if account.Spec.Role == citacloudv1.Admin {
 		//var certResult []byte
 		caSecret := &corev1.Secret{}
-		err = r.Get(ctx, types.NamespacedName{Name: GetCaSecretName(chainConfig.Name), Namespace: chainConfig.Namespace}, caSecret)
+		err := r.Get(ctx, types.NamespacedName{Name: GetCaSecretName(chainConfig.Name), Namespace: chainConfig.Namespace}, caSecret)
 		if err != nil && errors.IsNotFound(err) {
 			cert, key, err := cc.CreateCaAndRead()
 			caCertResult = cert
@@ -154,14 +158,14 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	} else {
 		// find ca secret
 		caSecret := &corev1.Secret{}
-		err = r.Get(ctx, types.NamespacedName{Name: GetCaSecretName(chainConfig.Name), Namespace: chainConfig.Namespace}, caSecret)
+		err := r.Get(ctx, types.NamespacedName{Name: GetCaSecretName(chainConfig.Name), Namespace: chainConfig.Namespace}, caSecret)
 		if err != nil {
 			logger.Error(err, "get ca secret error when create account cert and key")
 			return ctrl.Result{}, err
 		}
 
 		accountCertAndKeySecret := &corev1.Secret{}
-		err := r.Get(ctx, types.NamespacedName{Name: GetAccountCertAndKeySecretName(account.Name), Namespace: account.Namespace}, accountCertAndKeySecret)
+		err = r.Get(ctx, types.NamespacedName{Name: GetAccountCertAndKeySecretName(account.Name), Namespace: account.Namespace}, accountCertAndKeySecret)
 		if err != nil && errors.IsNotFound(err) {
 			csr, key, cert, err := cc.CreateSignCsrAndRead(account.Spec.Domain)
 			if err != nil {
@@ -194,7 +198,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if account.Status.Cert != string(caCertResult) || account.Status.Address != accountAddress {
 		account.Status.Cert = string(caCertResult)
 		account.Status.Address = accountAddress
-		err = r.Client.Status().Update(ctx, account)
+		err := r.Client.Status().Update(ctx, account)
 		if err != nil {
 			logger.Error(err, "update account status error")
 			return ctrl.Result{}, err
@@ -209,7 +213,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			logger.Error(err, "set account controller reference failed")
 			return ctrl.Result{}, err
 		}
-		err = r.Update(ctx, account)
+		err := r.Update(ctx, account)
 		if err != nil {
 			logger.Error(err, "set account controller reference failed")
 			return ctrl.Result{}, err

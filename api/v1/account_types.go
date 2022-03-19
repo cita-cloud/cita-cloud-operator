@@ -40,6 +40,8 @@ type AccountSpec struct {
 	KmsPassword string `json:"kmsPassword"`
 	// if role is Ordinary, you should set this field
 	Domain string `json:"domain,omitempty"`
+	// Address if address set, controller will not generate a new account address
+	Address string `json:"address,omitempty"`
 }
 
 // AccountStatus defines the observed state of Account
