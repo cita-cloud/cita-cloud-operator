@@ -67,8 +67,28 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		logger.Info(fmt.Sprintf("config dir %s/%s not found, we will init it", ".", chainConfig.Name))
 		err := cc.Init(chainConfig.Spec.Id)
 		if err != nil {
+			logger.Error(err, fmt.Sprintf("init %s/%s failed", ".", chainConfig.Name))
 			return ctrl.Result{}, err
 		}
+	}
+	if chainConfig.Status.AdminAccount != nil && !cc.CaExist() {
+		// ca_cert dir is empty, maybe the container was restarted, rewrite ca files from *chain*-ca-secret
+		logger.Info("rewrite ca file from ca-secret...")
+		caSecret := &corev1.Secret{}
+		err := r.Get(ctx, types.NamespacedName{Name: GetCaSecretName(chainConfig.Name), Namespace: chainConfig.Namespace}, caSecret)
+		if err != nil && errors.IsNotFound(err) {
+			logger.Error(err, "can't found admin account's ca secret resource")
+			return ctrl.Result{}, err
+		}
+		err = cc.WriteCaCert(caSecret.Data[CaCert])
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		err = cc.WriteCaKey(caSecret.Data[CaKey])
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		logger.Info("rewrite ca file from ca-secret successful")
 	}
 
 	// check account
@@ -82,6 +102,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			keyId, address, err := cc.CreateAccount(account.Spec.KmsPassword)
 			accountAddress = address
 			if err != nil {
+				logger.Error(err, "create account failed")
 				return ctrl.Result{}, err
 			}
 
@@ -129,6 +150,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			cert, key, err := cc.CreateCaAndRead()
 			caCertResult = cert
 			if err != nil {
+				logger.Error(err, "create ca cert failed")
 				return ctrl.Result{}, err
 			}
 			caSecret.ObjectMeta = metav1.ObjectMeta{
@@ -169,6 +191,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err != nil && errors.IsNotFound(err) {
 			csr, key, cert, err := cc.CreateSignCsrAndRead(account.Spec.Domain)
 			if err != nil {
+				logger.Error(err, "create csr or sign csr failed")
 				return ctrl.Result{}, err
 			}
 			accountCertAndKeySecret.ObjectMeta = metav1.ObjectMeta{
