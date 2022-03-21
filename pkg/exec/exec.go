@@ -35,6 +35,7 @@ type Cmd interface {
 	ReadKmsDb(address string) ([]byte, error)
 	// CreateCaAndRead. if no errors, return content of cert.pem，key.pem
 	CreateCaAndRead() ([]byte, []byte, error)
+	CaExist() bool
 	ReadCa() ([]byte, []byte, error)
 	WriteCaCert(cert []byte) error
 	WriteCaKey(key []byte) error
@@ -117,6 +118,14 @@ func (c CloudConfigCmd) ReadCa() ([]byte, []byte, error) {
 		return nil, nil, fmt.Errorf("read ca key.pem error: %v", err)
 	}
 	return cert, key, nil
+}
+
+func (c CloudConfigCmd) CaExist() bool {
+	_, err := os.Stat(fmt.Sprintf("%s/%s/ca_cert/cert.pem", c.configDir, c.chainName))
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func (c CloudConfigCmd) WriteCaCert(cert []byte) error {
