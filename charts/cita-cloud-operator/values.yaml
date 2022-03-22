@@ -7,11 +7,11 @@ replicaCount: 1
 
 image:
   # image.registry -- You can specify the image registry.
-  registry: registry.devops.rivtower.com
+  registry: docker.io
   # image.repository -- You can specify the image repository.
-  repository: cita-cloud/operator
+  repository: citacloud
   # image.pullPolicy -- You can specify the image pull policy.
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # image.tag -- You can specify the image tag.
   tag: "v0.0.1"
 
