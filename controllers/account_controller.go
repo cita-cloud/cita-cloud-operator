@@ -71,20 +71,16 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, err
 		}
 	}
-	if chainConfig.Status.AdminAccount != nil && !cc.CaExist() {
+	existedCaSecret, err := r.getCaSecret(ctx, GetCaSecretName(chainConfig.Name), chainConfig.Namespace)
+	if err == nil && !cc.CaExist() {
+		// exist ca secret
 		// ca_cert dir is empty, maybe the container was restarted, rewrite ca files from *chain*-ca-secret
 		logger.Info("rewrite ca file from ca-secret...")
-		caSecret := &corev1.Secret{}
-		err := r.Get(ctx, types.NamespacedName{Name: GetCaSecretName(chainConfig.Name), Namespace: chainConfig.Namespace}, caSecret)
-		if err != nil && errors.IsNotFound(err) {
-			logger.Error(err, "can't found admin account's ca secret resource")
-			return ctrl.Result{}, err
-		}
-		err = cc.WriteCaCert(caSecret.Data[CaCert])
+		err = cc.WriteCaCert(existedCaSecret.Data[CaCert])
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		err = cc.WriteCaKey(caSecret.Data[CaKey])
+		err = cc.WriteCaKey(existedCaSecret.Data[CaKey])
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -252,4 +248,13 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&citacloudv1.Account{}).
 		Complete(r)
+}
+
+func (r *AccountReconciler) getCaSecret(ctx context.Context, namespace, name string) (*corev1.Secret, error) {
+	caSecret := &corev1.Secret{}
+	err := r.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, caSecret)
+	if err != nil {
+		return nil, err
+	}
+	return caSecret, nil
 }
