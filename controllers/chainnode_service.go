@@ -328,18 +328,18 @@ reconnect_timeout = 5
 		if node.Cluster == cns.ChainNode.Spec.Cluster {
 			// in the same k8s cluster
 			networkStr = networkStr + fmt.Sprintf(`[[network_tls.peers]]
-domain = '%s'
+domain = '%s-%s'
 host = '%s'
 port = %d
 
-`, node.Domain, GetNodePortServiceName(node.Name), NetworkPort)
+`, cns.ChainConfig.Name, node.Domain, GetNodePortServiceName(node.Name), NetworkPort)
 		} else {
 			networkStr = networkStr + fmt.Sprintf(`[[network_tls.peers]]
-domain = '%s'
+domain = '%s-%s'
 host = '%s'
 port = %d
 
-`, node.Domain, node.ExternalIp, node.Port)
+`, cns.ChainConfig.Name, node.Domain, node.ExternalIp, node.Port)
 		}
 	}
 	return networkStr
