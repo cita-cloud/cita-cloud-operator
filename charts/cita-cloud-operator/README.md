@@ -20,10 +20,10 @@ Kubernetes: `>=1.18.0-0`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| enableWebhooks | bool | `true` | Whether to enable webhooks |
+| enableWebhooks | bool | `false` | Whether to enable webhooks, you should ensure cert-manager has been installed if set true |
 | image.pullPolicy | string | `"IfNotPresent"` | You can specify the image pull policy. |
-| image.registry | string | `"registry.devops.rivtower.com"` | You can specify the image registry. |
-| image.repository | string | `"cita-cloud/operator"` | You can specify the image repository. |
+| image.registry | string | `"docker.io"` | You can specify the image registry. |
+| image.repository | string | `"citacloud"` | You can specify the image repository. |
 | image.tag | string | `"v0.0.1"` | You can specify the image tag. |
 | replicaCount | int | `1` | replica count |
 | resources.limits.cpu | string | `"500m"` | cpu limit |
