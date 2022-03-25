@@ -90,12 +90,17 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		adminAccountOpts := []client.ListOption{
 			client.InNamespace(chainConfig.Namespace),
 			client.MatchingFields{"spec.chain": chainConfig.Name},
-			client.MatchingFields{"spec.role": string(citacloudv1.Admin)},
 		}
 		if err := r.List(ctx, adminAccountList, adminAccountOpts...); err != nil {
 			return ctrl.Result{}, err
 		}
-		if len(adminAccountList.Items) > 1 {
+		matchedAdminAccount := make([]citacloudv1.Account, 0)
+		for _, acItem := range adminAccountList.Items {
+			if acItem.Spec.Role == citacloudv1.Admin {
+				matchedAdminAccount = append(matchedAdminAccount, acItem)
+			}
+		}
+		if len(matchedAdminAccount) > 1 {
 			err := fmt.Errorf("admin account count > 1")
 			logger.Error(err, "admin account count > 1")
 			return ctrl.Result{}, err
@@ -103,9 +108,9 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		var updateFlag bool
 		var aai citacloudv1.AdminAccountInfo
-		if len(adminAccountList.Items) == 1 {
-			aai.Address = adminAccountList.Items[0].Status.Address
-			aai.Name = adminAccountList.Items[0].Name
+		if len(matchedAdminAccount) == 1 {
+			aai.Address = matchedAdminAccount[0].Status.Address
+			aai.Name = matchedAdminAccount[0].Name
 		}
 		if !reflect.DeepEqual(chainConfig.Status.AdminAccount, aai) {
 			chainConfig.Status.AdminAccount = &aai
@@ -113,19 +118,12 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 
 		// 查询共识账户
-		ConsensusAccountList := &citacloudv1.AccountList{}
-		ConsensusAccountOpts := []client.ListOption{
-			client.InNamespace(chainConfig.Namespace),
-			client.MatchingFields{"spec.chain": chainConfig.Name},
-			client.MatchingFields{"spec.role": string(citacloudv1.Consensus)},
-		}
-		if err := r.List(ctx, ConsensusAccountList, ConsensusAccountOpts...); err != nil {
-			return ctrl.Result{}, err
-		}
 		vaiList := make([]citacloudv1.ValidatorAccountInfo, 0)
-		for _, acc := range ConsensusAccountList.Items {
-			vai := citacloudv1.ValidatorAccountInfo{Name: acc.Name, Address: acc.Status.Address, CreationTimestamp: &acc.CreationTimestamp}
-			vaiList = append(vaiList, vai)
+		for _, acc := range adminAccountList.Items {
+			if acc.Spec.Role == citacloudv1.Consensus {
+				vai := citacloudv1.ValidatorAccountInfo{Name: acc.Name, Address: acc.Status.Address, CreationTimestamp: &acc.CreationTimestamp}
+				vaiList = append(vaiList, vai)
+			}
 		}
 		// sort by creationTimestamp
 		sort.Sort(citacloudv1.ByCreationTimestampForValidatorAccount(vaiList))
