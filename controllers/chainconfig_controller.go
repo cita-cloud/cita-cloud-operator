@@ -86,16 +86,16 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	if chainConfig.Status.Status == citacloudv1.Publicizing {
-		adminAccountList := &citacloudv1.AccountList{}
-		adminAccountOpts := []client.ListOption{
+		accountList := &citacloudv1.AccountList{}
+		accountOpts := []client.ListOption{
 			client.InNamespace(chainConfig.Namespace),
 			client.MatchingFields{"spec.chain": chainConfig.Name},
 		}
-		if err := r.List(ctx, adminAccountList, adminAccountOpts...); err != nil {
+		if err := r.List(ctx, accountList, accountOpts...); err != nil {
 			return ctrl.Result{}, err
 		}
 		matchedAdminAccount := make([]citacloudv1.Account, 0)
-		for _, acItem := range adminAccountList.Items {
+		for _, acItem := range accountList.Items {
 			if acItem.Spec.Role == citacloudv1.Admin {
 				matchedAdminAccount = append(matchedAdminAccount, acItem)
 			}
@@ -119,10 +119,12 @@ func (r *ChainConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		// 查询共识账户
 		vaiList := make([]citacloudv1.ValidatorAccountInfo, 0)
-		for _, acc := range adminAccountList.Items {
+		for _, acc := range accountList.Items {
 			if acc.Spec.Role == citacloudv1.Consensus {
-				vai := citacloudv1.ValidatorAccountInfo{Name: acc.Name, Address: acc.Status.Address, CreationTimestamp: &acc.CreationTimestamp}
-				vaiList = append(vaiList, vai)
+				if acc.Status.Address != "" {
+					vai := citacloudv1.ValidatorAccountInfo{Name: acc.Name, Address: acc.Status.Address, CreationTimestamp: &acc.CreationTimestamp}
+					vaiList = append(vaiList, vai)
+				}
 			}
 		}
 		// sort by creationTimestamp
