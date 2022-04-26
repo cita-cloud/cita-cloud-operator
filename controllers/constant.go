@@ -43,9 +43,13 @@ const (
 	StorageLogConfigFile    = "storage-log4rs.yaml"
 	ConsensusLogConfigFile  = "consensus-log4rs.yaml"
 
-	NetworkPort    = 40000
-	ControllerPort = 50004
-	ExecutorPort   = 50002
+	NetworkPort       = 40000
+	NetworkRPCPort    = 50000
+	ConsensusRPCPort  = 50001
+	ExecutorRPCPort   = 50002
+	StorageRPCPort    = 50003
+	ControllerRPCPort = 50004
+	KmsRPCPort        = 50005
 
 	CaCert = "cert.pem"
 	CaKey  = "key.pem"
