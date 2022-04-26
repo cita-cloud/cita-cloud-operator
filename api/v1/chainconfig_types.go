@@ -63,11 +63,16 @@ type ChainConfigSpec struct {
 
 const (
 	VERSION633          = "v6.3.3"
+	VERSION640          = "v6.4.0"
 	LATEST_VERSION      = "latest"
 	VERSION633_P2P_BFT  = "v6.3.3_p2p_bft"
 	VERSION633_P2P_RAFT = "v6.3.3_p2p_raft"
 	VERSION633_TLS_BFT  = "v6.3.3_tls_bft"
 	VERSION633_TLS_RAFT = "v6.3.3_tls_raft"
+	VERSION640_P2P_BFT  = "v6.4.0_p2p_bft"
+	VERSION640_P2P_RAFT = "v6.4.0_p2p_raft"
+	VERSION640_TLS_BFT  = "v6.4.0_tls_bft"
+	VERSION640_TLS_RAFT = "v6.4.0_tls_raft"
 	LATEST_P2P_BFT      = "latest_p2p_bft"
 	LATEST_P2P_RAFT     = "latest_p2p_raft"
 	LATEST_TLS_BFT      = "latest_tls_bft"
@@ -192,6 +197,24 @@ func (c *ChainConfig) GetExactVersion() (string, error) {
 				return LATEST_P2P_BFT, nil
 			} else if c.Spec.ConsensusType == Raft {
 				return LATEST_P2P_RAFT, nil
+			} else {
+				return "", fmt.Errorf("cann't get exact version")
+			}
+		}
+	} else if c.Spec.Version == VERSION640 {
+		if c.Spec.EnableTLS {
+			if c.Spec.ConsensusType == BFT {
+				return VERSION640_TLS_BFT, nil
+			} else if c.Spec.ConsensusType == Raft {
+				return VERSION640_TLS_RAFT, nil
+			} else {
+				return "", fmt.Errorf("cann't get exact version")
+			}
+		} else {
+			if c.Spec.ConsensusType == BFT {
+				return VERSION640_P2P_BFT, nil
+			} else if c.Spec.ConsensusType == Raft {
+				return VERSION640_P2P_RAFT, nil
 			} else {
 				return "", fmt.Errorf("cann't get exact version")
 			}

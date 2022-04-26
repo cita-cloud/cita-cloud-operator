@@ -57,7 +57,43 @@ var VERSION_MAP = map[string]ImageInfo{
 		ControllerImage: "citacloud/controller:v6.3.3",
 		KmsImage:        "citacloud/kms_sm:v6.3.3",
 	},
-
+	// v6.4.0
+	VERSION640_TLS_BFT: {
+		PullPolicy:      corev1.PullIfNotPresent,
+		NetworkImage:    "citacloud/network_tls:v6.4.0",
+		ConsensusImage:  "citacloud/consensus_bft:v6.4.0",
+		ExecutorImage:   "citacloud/executor_evm:v6.4.0",
+		StorageImage:    "citacloud/storage_rocksdb:v6.4.0",
+		ControllerImage: "citacloud/controller:v6.4.0",
+		KmsImage:        "citacloud/kms_sm:v6.4.0",
+	},
+	VERSION640_TLS_RAFT: {
+		PullPolicy:      corev1.PullIfNotPresent,
+		NetworkImage:    "citacloud/network_tls:v6.4.0",
+		ConsensusImage:  "citacloud/consensus_raft:v6.4.0",
+		ExecutorImage:   "citacloud/executor_evm:v6.4.0",
+		StorageImage:    "citacloud/storage_rocksdb:v6.4.0",
+		ControllerImage: "citacloud/controller:v6.4.0",
+		KmsImage:        "citacloud/kms_sm:v6.4.0",
+	},
+	VERSION640_P2P_BFT: {
+		PullPolicy:      corev1.PullIfNotPresent,
+		NetworkImage:    "citacloud/network_p2p:v6.4.0",
+		ConsensusImage:  "citacloud/consensus_bft:v6.4.0",
+		ExecutorImage:   "citacloud/executor_evm:v6.4.0",
+		StorageImage:    "citacloud/storage_rocksdb:v6.4.0",
+		ControllerImage: "citacloud/controller:v6.4.0",
+		KmsImage:        "citacloud/kms_sm:v6.4.0",
+	},
+	VERSION640_P2P_RAFT: {
+		PullPolicy:      corev1.PullIfNotPresent,
+		NetworkImage:    "citacloud/network_p2p:v6.4.0",
+		ConsensusImage:  "citacloud/consensus_raft:v6.4.0",
+		ExecutorImage:   "citacloud/executor_evm:v6.4.0",
+		StorageImage:    "citacloud/storage_rocksdb:v6.4.0",
+		ControllerImage: "citacloud/controller:v6.4.0",
+		KmsImage:        "citacloud/kms_sm:v6.4.0",
+	},
 	// latest
 	LATEST_TLS_BFT: {
 		PullPolicy:      corev1.PullIfNotPresent,
