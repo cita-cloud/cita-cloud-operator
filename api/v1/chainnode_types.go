@@ -18,6 +18,7 @@
 package v1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -48,6 +49,9 @@ type ChainNodeSpec struct {
 
 	// ImageInfo
 	ImageInfo `json:"imageInfo,omitempty"`
+
+	// Resources describes the compute resource request and limit (include cpu、memory)
+	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type LogLevel string

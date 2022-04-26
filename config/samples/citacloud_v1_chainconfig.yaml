@@ -14,5 +14,5 @@ spec:
   action: Publicizing
 #  action: Online
   imageInfo:
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   version: latest
