@@ -74,13 +74,13 @@ func (r *ChainNodeReconciler) updateService(ctx context.Context, chainConfig *ci
 			},
 			{
 				Name:       "rpc",
-				Port:       ControllerPort,
-				TargetPort: intstr.FromInt(ControllerPort),
+				Port:       ControllerRPCPort,
+				TargetPort: intstr.FromInt(ControllerRPCPort),
 			},
 			{
 				Name:       "call",
-				Port:       ExecutorPort,
-				TargetPort: intstr.FromInt(ExecutorPort),
+				Port:       ExecutorRPCPort,
+				TargetPort: intstr.FromInt(ExecutorRPCPort),
 			},
 		},
 		Type: corev1.ServiceTypeNodePort,

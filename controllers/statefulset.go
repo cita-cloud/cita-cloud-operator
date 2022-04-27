@@ -181,7 +181,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 								Name:          "network",
 							},
 							{
-								ContainerPort: 50000,
+								ContainerPort: NetworkRPCPort,
 								Protocol:      corev1.ProtocolTCP,
 								Name:          "grpc",
 							},
@@ -208,6 +208,18 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 						Resources:                chainNode.Spec.Resources,
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								Exec: &corev1.ExecAction{
+									Command: []string{
+										"grpc_health_probe",
+										fmt.Sprintf("-addr=127.0.0.1:%d", NetworkRPCPort),
+									},
+								},
+							},
+							InitialDelaySeconds: 15,
+							PeriodSeconds:       10,
+						},
 					},
 					{
 						Name:            ConsensusContainer,
@@ -215,7 +227,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
-								ContainerPort: 50001,
+								ContainerPort: ConsensusRPCPort,
 								Protocol:      corev1.ProtocolTCP,
 								Name:          "grpc",
 							},
@@ -242,6 +254,18 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 						Resources:                chainNode.Spec.Resources,
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								Exec: &corev1.ExecAction{
+									Command: []string{
+										"grpc_health_probe",
+										fmt.Sprintf("-addr=127.0.0.1:%d", ConsensusRPCPort),
+									},
+								},
+							},
+							InitialDelaySeconds: 15,
+							PeriodSeconds:       10,
+						},
 					},
 					{
 						Name:            ExecutorContainer,
@@ -249,7 +273,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
-								ContainerPort: ExecutorPort,
+								ContainerPort: ExecutorRPCPort,
 								Protocol:      corev1.ProtocolTCP,
 								Name:          "grpc",
 							},
@@ -283,6 +307,18 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 						Resources:                chainNode.Spec.Resources,
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								Exec: &corev1.ExecAction{
+									Command: []string{
+										"grpc_health_probe",
+										fmt.Sprintf("-addr=127.0.0.1:%d", ExecutorRPCPort),
+									},
+								},
+							},
+							InitialDelaySeconds: 15,
+							PeriodSeconds:       10,
+						},
 					},
 					{
 						Name:            StorageContainer,
@@ -290,7 +326,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
-								ContainerPort: 50003,
+								ContainerPort: StorageRPCPort,
 								Protocol:      corev1.ProtocolTCP,
 								Name:          "grpc",
 							},
@@ -324,6 +360,18 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 						Resources:                chainNode.Spec.Resources,
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								Exec: &corev1.ExecAction{
+									Command: []string{
+										"grpc_health_probe",
+										fmt.Sprintf("-addr=127.0.0.1:%d", StorageRPCPort),
+									},
+								},
+							},
+							InitialDelaySeconds: 15,
+							PeriodSeconds:       10,
+						},
 					},
 					{
 						Name:            ControllerContainer,
@@ -331,7 +379,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
-								ContainerPort: 50004,
+								ContainerPort: ControllerRPCPort,
 								Protocol:      corev1.ProtocolTCP,
 								Name:          "grpc",
 							},
@@ -365,6 +413,18 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 						Resources:                chainNode.Spec.Resources,
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								Exec: &corev1.ExecAction{
+									Command: []string{
+										"grpc_health_probe",
+										fmt.Sprintf("-addr=127.0.0.1:%d", ControllerRPCPort),
+									},
+								},
+							},
+							InitialDelaySeconds: 30,
+							PeriodSeconds:       10,
+						},
 					},
 					{
 						Name:            KmsContainer,
@@ -372,7 +432,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						ImagePullPolicy: chainNode.Spec.PullPolicy,
 						Ports: []corev1.ContainerPort{
 							{
-								ContainerPort: 50005,
+								ContainerPort: KmsRPCPort,
 								Protocol:      corev1.ProtocolTCP,
 								Name:          "grpc",
 							},
@@ -406,6 +466,18 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 						Resources:                chainNode.Spec.Resources,
+						LivenessProbe: &corev1.Probe{
+							Handler: corev1.Handler{
+								Exec: &corev1.ExecAction{
+									Command: []string{
+										"grpc_health_probe",
+										fmt.Sprintf("-addr=127.0.0.1:%d", KmsRPCPort),
+									},
+								},
+							},
+							InitialDelaySeconds: 15,
+							PeriodSeconds:       10,
+						},
 					},
 				},
 				Volumes: GetVolumes(chainNode),
