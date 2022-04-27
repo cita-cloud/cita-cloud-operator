@@ -2,6 +2,23 @@ apiVersion: v1
 entries:
   cita-cloud-operator:
   - apiVersion: v2
+    appVersion: 6.4.0
+    created: "2022-04-27T16:07:05.012295598Z"
+    description: A Helm chart for Cita-Cloud Operator
+    digest: 979f021e59649f1029d9b9f1c87086fb8c051b819653ed6a803de3439ea706f0
+    home: https://github.com/cita-cloud/cita-cloud-operator
+    keywords:
+    - cita-cloud
+    kubeVersion: '>=1.18.0-0'
+    maintainers:
+    - email: contact@rivtower.com
+      name: Rivtower Technologies
+    name: cita-cloud-operator
+    type: application
+    urls:
+    - https://github.com/cita-cloud/cita-cloud-operator/releases/download/helm-chart-cita-cloud-operator-0.0.3/cita-cloud-operator-0.0.3.tgz
+    version: 0.0.3
+  - apiVersion: v2
     appVersion: 0.0.2
     created: "2022-04-18T06:54:13.176700095Z"
     description: A Helm chart for Cita-Cloud Operator
@@ -35,4 +52,4 @@ entries:
     urls:
     - https://github.com/cita-cloud/cita-cloud-operator/releases/download/helm-chart-cita-cloud-operator-0.0.1/cita-cloud-operator-0.0.1.tgz
     version: 0.0.1
-generated: "2022-04-18T06:54:13.176709295Z"
+generated: "2022-04-27T16:07:05.012306798Z"
