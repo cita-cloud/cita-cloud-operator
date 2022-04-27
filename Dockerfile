@@ -30,7 +30,7 @@ LABEL description="cita-cloud-operator"
 MAINTAINER https://github.com/acechef
 
 WORKDIR /
-COPY --from=citacloud/cloud-config:v6.3.3 /usr/bin/cloud-config /usr/bin/
+COPY --from=citacloud/cloud-config:v6.4.0 /usr/bin/cloud-config /usr/bin/
 RUN /bin/sh -c set -eux;\
     apt-get update;\
     apt-get install -y --no-install-recommends libsqlite3-0;\

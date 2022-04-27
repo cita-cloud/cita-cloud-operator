@@ -2,8 +2,8 @@ apiVersion: v2
 name: cita-cloud-operator
 description: A Helm chart for Cita-Cloud Operator
 type: application
-version: 0.0.2
-appVersion: 0.0.2
+version: 0.0.3
+appVersion: 6.4.0
 kubeVersion: ">=1.18.0-0"
 home: https://github.com/cita-cloud/cita-cloud-operator
 
