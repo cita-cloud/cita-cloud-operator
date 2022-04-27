@@ -207,6 +207,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						},
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+						Resources:                chainNode.Spec.Resources,
 					},
 					{
 						Name:            ConsensusContainer,
@@ -240,6 +241,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						},
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+						Resources:                chainNode.Spec.Resources,
 					},
 					{
 						Name:            ExecutorContainer,
@@ -280,6 +282,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						},
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+						Resources:                chainNode.Spec.Resources,
 					},
 					{
 						Name:            StorageContainer,
@@ -320,6 +323,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						},
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+						Resources:                chainNode.Spec.Resources,
 					},
 					{
 						Name:            ControllerContainer,
@@ -360,6 +364,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						},
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+						Resources:                chainNode.Spec.Resources,
 					},
 					{
 						Name:            KmsContainer,
@@ -400,6 +405,7 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 						},
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+						Resources:                chainNode.Spec.Resources,
 					},
 				},
 				Volumes: GetVolumes(chainNode),

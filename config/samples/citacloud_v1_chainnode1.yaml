@@ -15,3 +15,10 @@ spec:
   action: "Initialize"
 #  action: "Start"
   logLevel: info
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 4000m
+      memory: 8192Mi
