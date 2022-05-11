@@ -219,6 +219,10 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							},
 							InitialDelaySeconds: 15,
 							PeriodSeconds:       10,
+							// default value
+							TimeoutSeconds:   1,
+							SuccessThreshold: 1,
+							FailureThreshold: 3,
 						},
 					},
 					{
@@ -265,6 +269,10 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							},
 							InitialDelaySeconds: 15,
 							PeriodSeconds:       10,
+							// default value
+							TimeoutSeconds:   1,
+							SuccessThreshold: 1,
+							FailureThreshold: 3,
 						},
 					},
 					{
@@ -318,6 +326,10 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							},
 							InitialDelaySeconds: 15,
 							PeriodSeconds:       10,
+							// default value
+							TimeoutSeconds:   1,
+							SuccessThreshold: 1,
+							FailureThreshold: 3,
 						},
 					},
 					{
@@ -371,6 +383,10 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							},
 							InitialDelaySeconds: 15,
 							PeriodSeconds:       10,
+							// default value
+							TimeoutSeconds:   1,
+							SuccessThreshold: 1,
+							FailureThreshold: 3,
 						},
 					},
 					{
@@ -424,6 +440,10 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							},
 							InitialDelaySeconds: 30,
 							PeriodSeconds:       10,
+							// default value
+							TimeoutSeconds:   1,
+							SuccessThreshold: 1,
+							FailureThreshold: 3,
 						},
 					},
 					{
@@ -477,6 +497,10 @@ func (r *ChainNodeReconciler) generateStatefulSet(ctx context.Context, chainConf
 							},
 							InitialDelaySeconds: 15,
 							PeriodSeconds:       10,
+							// default value
+							TimeoutSeconds:   1,
+							SuccessThreshold: 1,
+							FailureThreshold: 3,
 						},
 					},
 				},
